@@ -148,7 +148,10 @@ export default function HomePage() {
       <div
         aria-hidden
         style={{
-          height: 'calc(100dvh + var(--safari-top-bleed) + var(--safari-bottom-bleed))',
+          // 100lvh = the LARGEST viewport (bars retracted) so the stage is always
+          // at least full screen plus bleed, regardless of bar state. Using 100dvh
+          // here left a gap when the bars retracted and the viewport grew.
+          height: 'calc(100lvh + var(--safari-top-bleed) + var(--safari-bottom-bleed))',
           marginTop: 'calc(-1 * var(--safari-top-bleed))',
         }}
       >

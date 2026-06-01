@@ -94,6 +94,11 @@ export function ShaderAnimation({ className = 'h-full w-full' }: ShaderAnimation
     onWindowResize();
     window.addEventListener('resize', onWindowResize, false);
 
+    // ResizeObserver catches container size changes that the window resize event
+    // misses on iOS (Safari bar show/hide changing the dvh-derived height).
+    const resizeObserver = new ResizeObserver(onWindowResize);
+    resizeObserver.observe(container);
+
     sceneRef.current = { renderer, uniforms, animationId: 0 };
 
     // Respect reduced motion: render one static frame, no animation loop.
@@ -113,6 +118,7 @@ export function ShaderAnimation({ className = 'h-full w-full' }: ShaderAnimation
 
     return () => {
       window.removeEventListener('resize', onWindowResize);
+      resizeObserver.disconnect();
       if (sceneRef.current) {
         cancelAnimationFrame(sceneRef.current.animationId);
         if (container && sceneRef.current.renderer.domElement) {

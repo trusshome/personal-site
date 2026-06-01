@@ -44,6 +44,13 @@ export const metadata: Metadata = {
   },
   description,
   alternates: { canonical: '/' },
+  // Standalone web app. black-translucent makes the iOS status bar transparent
+  // so the shader renders behind it edge to edge when added to the home screen.
+  appleWebApp: {
+    capable: true,
+    title: 'entity resoLOUtion',
+    statusBarStyle: 'black-translucent',
+  },
   openGraph: {
     type: 'website',
     locale: 'en_US',

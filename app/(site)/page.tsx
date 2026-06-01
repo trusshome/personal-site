@@ -139,19 +139,19 @@ export default function HomePage() {
             paddingBottom: 'env(safe-area-inset-bottom)',
           }}
         >
-        {/* 100lvh = large viewport height = full screen with iOS bars retracted.
-            inset:0 would only fill the dynamic viewport (the gap between the bars),
-            so the shader must use lvh to physically paint behind the status bar
-            and the Safari bottom toolbar. */}
+        {/* On iOS Safari, 100vh equals the LARGE viewport (full screen, behind
+            both bars) and is universally supported, unlike lvh which collapses
+            to height 0 on older iOS. This is what makes the shader bleed behind
+            the status bar and the Safari bottom toolbar. */}
         <div
           className="fixed left-0 top-0"
-          style={{ zIndex: 0, width: '100vw', height: '100lvh' }}
+          style={{ zIndex: 0, width: '100vw', height: '100vh' }}
         >
           <ShaderAnimation className="h-full w-full" />
         </div>
         <div
           className="fixed left-0 top-0"
-          style={{ zIndex: 0, width: '100vw', height: '100lvh', backgroundColor: 'rgba(20,23,28,0.3)' }}
+          style={{ zIndex: 0, width: '100vw', height: '100vh', backgroundColor: 'rgba(20,23,28,0.3)' }}
           aria-hidden
         />
 

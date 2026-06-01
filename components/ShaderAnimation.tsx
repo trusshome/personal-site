@@ -74,10 +74,19 @@ export function ShaderAnimation({ className = 'h-full w-full' }: ShaderAnimation
     renderer.setPixelRatio(window.devicePixelRatio);
     container.appendChild(renderer.domElement);
 
+    // Force the canvas to always visually fill the container via CSS, decoupled
+    // from the drawing-buffer pixel size. This guarantees the canvas covers the
+    // full fixed wrapper (including behind iOS bars) regardless of when or how
+    // clientHeight is measured.
+    renderer.domElement.style.display = 'block';
+    renderer.domElement.style.width = '100%';
+    renderer.domElement.style.height = '100%';
+
     const onWindowResize = () => {
       const width = container.clientWidth;
       const height = container.clientHeight;
-      renderer.setSize(width, height);
+      // updateStyle = false: keep the canvas at 100% x 100% CSS, only resize the buffer.
+      renderer.setSize(width, height, false);
       uniforms.resolution.value.x = renderer.domElement.width;
       uniforms.resolution.value.y = renderer.domElement.height;
     };

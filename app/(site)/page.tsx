@@ -128,12 +128,12 @@ export default function HomePage() {
   const [panel, setPanel] = useState<Panel>('none');
   const toggle = (p: Panel) => setPanel((cur) => (cur === p ? 'none' : p));
 
-  // iOS 26 Liquid Glass: scroll into the runway on load so Safari composites
-  // real in-flow shader pixels behind its chrome, then pin scroll to that
-  // offset so the document cannot be scrolled away. The runway must stay
-  // (Safari needs scrollY > 0) so we lock the position instead of disabling
-  // scroll. Panels still scroll internally — their overflow is separate from
-  // the window scroll, so this pin never interferes with them.
+  // iOS 26 Liquid Glass: scroll into the runway once so Safari composites real
+  // in-flow shader pixels behind its chrome, then block document scroll gestures
+  // entirely. The runway must stay (Safari needs scrollY > 0), so rather than
+  // letting the page scroll and snapping back (janky), we stop the gesture from
+  // ever moving the document. Touches inside a scrollable panel are still
+  // allowed, so the booking calendar and galleries scroll normally.
   useEffect(() => {
     const isMobile = matchMedia('(max-width: 760px)').matches;
     const offset = isMobile
@@ -142,23 +142,22 @@ export default function HomePage() {
         ) || 0
       : 0;
 
-    const instant = 'instant' as ScrollBehavior;
-    window.scrollTo({ top: offset, left: 0, behavior: instant });
+    window.scrollTo({ top: offset, left: 0, behavior: 'instant' as ScrollBehavior });
 
-    let raf = 0;
-    const pin = () => {
-      cancelAnimationFrame(raf);
-      raf = requestAnimationFrame(() => {
-        if (Math.abs(window.scrollY - offset) > 0.5) {
-          window.scrollTo({ top: offset, left: 0, behavior: instant });
-        }
-      });
+    // Allow the gesture only when it lands inside an element that can actually
+    // scroll; block it (and thus the document scroll) otherwise.
+    const onTouchMove = (e: TouchEvent) => {
+      let el = e.target as HTMLElement | null;
+      while (el && el !== document.documentElement) {
+        const oy = getComputedStyle(el).overflowY;
+        if ((oy === 'auto' || oy === 'scroll') && el.scrollHeight > el.clientHeight) return;
+        el = el.parentElement;
+      }
+      e.preventDefault();
     };
-    window.addEventListener('scroll', pin, { passive: true });
-    return () => {
-      window.removeEventListener('scroll', pin);
-      cancelAnimationFrame(raf);
-    };
+
+    document.addEventListener('touchmove', onTouchMove, { passive: false });
+    return () => document.removeEventListener('touchmove', onTouchMove);
   }, []);
 
   return (

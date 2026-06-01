@@ -201,9 +201,67 @@ Orphaned dev server. Kill all node before starting a fresh dev server to avoid s
 
 ---
 
+## iOS 26 Safari Liquid Glass fix (June 1 2026, second session)
+
+The hero shader would not bleed behind the iOS 26 Safari status bar or bottom
+toolbar. Many wrong attempts (theme-color, 100dvh, 100lvh on a fixed layer,
+viewport-fit alone) failed. Root cause and real fix come from
+https://1ar.io/updates/safari-26-liquid-glass-web.
+
+Root cause. iOS 26 Liquid Glass samples the root CSS background-color behind
+its chrome at scrollY 0, ignores theme-color entirely, and does NOT composite
+fixed or absolute layers behind the chrome. It composites normal-flow content,
+and only once scrollY > 0.
+
+What is now in place:
+- globals.css `:root` vars: `--safari-chrome-bg: #14171C`, `--safari-top-bleed:
+  62px`, `--safari-bottom-bleed: 136px`, `--safari-scroll-offset: 62px`.
+- `html { min-height:100%; overflow-y:scroll; overscroll-behavior:none;
+  background-color: var(--safari-chrome-bg) }`.
+- `body { min-height: calc(100dvh + var(--safari-scroll-offset)); margin:0;
+  background-color: var(--safari-chrome-bg) }`. NOTE the old `body` background
+  was `--color-paper` (light) which is what Safari was sampling. Now ink.
+- app/layout.tsx: html/body have NO inline bg styles or bg-ink class anymore;
+  globals.css owns the root color. viewport has `viewport-fit: cover` and
+  `colorScheme: 'dark'`. theme-color is intentionally NOT set.
+- app/(site)/page.tsx hero structure:
+  - Outer wrapper `div { position: relative; display: flow-root }` (flow-root
+    stops the negative-margin from collapsing).
+  - MEDIA STAGE, in normal flow (this is what composites behind the chrome):
+    `height: calc(100lvh + top-bleed + bottom-bleed); margin-top:
+    calc(-1 * top-bleed)`. Holds `<ShaderAnimation/>`. 100lvh (not dvh) so it is
+    always full screen plus bleed in every bar state.
+  - CONTENT, `position: fixed; inset: 0; overflowY: auto; overscrollBehavior:
+    contain` with safe-area padding. Fixed so the runway scroll never moves the
+    content; internal overflow lets tall panels (the calendar) scroll.
+- ShaderAnimation.tsx: canvas decoupled from buffer — `setSize(w,h,false)` plus
+  canvas CSS `width/height: 100%`. A ResizeObserver on the container re-renders
+  on size changes the window resize event misses on iOS.
+- Scroll lock (page.tsx useEffect): on load `scrollTo(0, offset)` (mobile reads
+  --safari-scroll-offset, desktop 0). Then a `touchmove` listener with
+  `{ passive:false }` calls preventDefault on any gesture UNLESS it lands inside
+  a real scrollable element (walks up checking overflowY auto/scroll with
+  scrollHeight > clientHeight). This freezes the document so users cannot scroll
+  the hero away, while panels still scroll. scrollY stays at the offset so
+  Liquid Glass stays composited. The earlier snap-back approach was removed (janky).
+
+Also fixed this session: title fluid size `text-[1.75rem]` to `sm:text-5xl` to
+`lg:text-7xl` with whitespace-nowrap; buttons `rounded-[9999px]` (not
+rounded-full, which Safari mis-rendered) in a `grid grid-cols-2` on mobile and
+`sm:flex` on desktop; GlassBookingCalendar responsive (flex-col on mobile, height
+animation instead of width); OG image redesigned to the dark hero palette;
+security headers + API input validation added (see fix: commits).
+
 ## Current state
 
-www.entityresoloution.com is live. The hero page shows the full-bleed WebGL shader, entity resoLOUtion wordmark, four dock buttons, and the correct panel for whichever button is active. Booking calendar fetches real Cal.com slots and completes bookings. All other pages return 404. Sitemap shows only /. GitHub repo is clean and authored correctly.
+www.entityresoloution.com is live. The hero page shows the full-bleed WebGL
+shader (now correctly bleeding behind both iOS 26 Safari bars), entity
+resoLOUtion wordmark, four dock buttons (Projects, Data, Book, Find Me), and the
+correct panel for whichever button is active. The hero is scroll-locked on
+mobile. Booking calendar fetches real Cal.com slots (v2 API) and completes
+bookings. All other pages return 404. Sitemap shows only /. Standalone web-app
+meta + manifest are in place. GitHub repo is clean and authored as
+hello@trusshomeco.com / trusshome.
 
 ---
 

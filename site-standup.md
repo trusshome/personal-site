@@ -66,6 +66,36 @@ Git setup and deploy.
 
 ---
 
+## Second session (June 1 2026) — mobile + iOS 26 Liquid Glass
+
+Deployed the site (Step 8) then spent a long stretch fixing iOS Safari mobile.
+
+Mobile layout fixes (committed):
+- Safe-area handling, body/html to ink, fluid hero title (text-[1.75rem] →
+  sm:text-5xl → lg:text-7xl, whitespace-nowrap).
+- Buttons rounded-[9999px] not rounded-full (Safari mis-rendered the token); 2x2
+  grid on mobile, flex row on desktop.
+- GlassBookingCalendar responsive: flex-col on mobile, animates height instead of
+  width, slot grid capped max-h-48 on mobile.
+- OG image redesigned dark to match hero. Security headers + API validation added.
+- Standalone web-app: appleWebApp black-translucent + app/manifest.ts.
+
+iOS 26 Liquid Glass shader-behind-bars fix (the hard one). Source:
+https://1ar.io/updates/safari-26-liquid-glass-web. Full detail in
+SESSION-HANDOFF.md. Key points:
+- iOS 26 samples root CSS background-color at scrollY 0, ignores theme-color,
+  and does NOT composite fixed/absolute layers behind the chrome — only
+  normal-flow content, and only when scrollY > 0.
+- Fix: ink root bg in globals.css, scroll runway (body min-height 100dvh+62px,
+  html overflow-y scroll), in-flow bleeding MEDIA STAGE (100lvh + 62 + 136, neg
+  margin-top), content fixed+overflow-auto, ResizeObserver on the shader canvas,
+  scrollTo offset on load.
+- Scroll lock: touchmove preventDefault on the document unless the gesture is
+  inside a real scrollable element. Freezes the hero, keeps Liquid Glass, lets
+  panels scroll. (A snap-back attempt was tried first and removed for jank.)
+
+All verified working on the user's iPhone (iOS 26). Site live.
+
 ## Files in flight
 
 None. Session is complete and all files are committed and deployed.

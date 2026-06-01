@@ -37,7 +37,9 @@ html {
   overflow-y: scroll;
   overscroll-behavior: none;
   background-color: var(--safari-chrome-bg);
+  scrollbar-width: none; /* Firefox */
 }
+html::-webkit-scrollbar { display: none; } /* Chrome, Safari, Edge */
 
 /* Lenis smooth-scroll */
 html.lenis, html.lenis body { height: auto; }

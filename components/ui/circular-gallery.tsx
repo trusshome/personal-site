@@ -23,22 +23,47 @@ interface CircularGalleryProps extends HTMLAttributes<HTMLDivElement> {
   cardHeight?: number;
 }
 
+// How quickly currentVelocity lerps toward autoRotateSpeed after a swipe.
+// 0.06 ≈ 0.8s to settle at 60fps — feels like natural deceleration.
+const MOMENTUM_LERP = 0.06;
+const MAX_SWIPE_VELOCITY = 8; // degrees/frame cap so wild flicks don't overshoot
+
 const CircularGallery = React.forwardRef<HTMLDivElement, CircularGalleryProps>(
   ({ items, className, radius = 480, autoRotateSpeed = 0.03, cardWidth = 260, cardHeight = 360, ...props }, ref) => {
     const [rotation, setRotation] = useState(0);
+
+    // isInteracting blocks the auto-rotate tick while a touch/pointer is active.
     const isInteracting = useRef(false);
     const interactTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
     const animationFrameRef = useRef<number | null>(null);
+
+    // Pointer (mouse/stylus) drag state
     const lastPointerX = useRef(0);
+
+    // Touch drag state
     const lastTouchX = useRef(0);
+    const lastTouchTime = useRef(0);
+    const touchVelocity = useRef(0); // smoothed degrees/frame during swipe
+
     const isDragging = useRef(false);
     const touchMoved = useRef(false);
+
+    // Running velocity used by the auto-rotate tick. Initialized to autoRotateSpeed
+    // so the carousel starts moving immediately. On touch release this is set to the
+    // swipe velocity and the tick lerps it back to autoRotateSpeed — that's the
+    // gradual deceleration into normal auto-spin.
+    const currentVelocity = useRef(autoRotateSpeed);
+
     const internalRef = useRef<HTMLDivElement | null>(null);
 
+    // Auto-rotate tick — lerps currentVelocity toward autoRotateSpeed each frame
+    // so swipe momentum bleeds smoothly into the background spin.
     useEffect(() => {
       const tick = () => {
         if (!isInteracting.current) {
-          setRotation((prev) => prev + autoRotateSpeed);
+          currentVelocity.current +=
+            (autoRotateSpeed - currentVelocity.current) * MOMENTUM_LERP;
+          setRotation((prev) => prev + currentVelocity.current);
         }
         animationFrameRef.current = requestAnimationFrame(tick);
       };
@@ -53,6 +78,7 @@ const CircularGallery = React.forwardRef<HTMLDivElement, CircularGalleryProps>(
       if (interactTimeoutRef.current) clearTimeout(interactTimeoutRef.current);
     }, []);
 
+    // Used only by wheel and pointer (mouse) handlers which don't have velocity info.
     const resumeAutoRotate = useCallback((delayMs = 800) => {
       if (interactTimeoutRef.current) clearTimeout(interactTimeoutRef.current);
       interactTimeoutRef.current = setTimeout(() => {
@@ -73,6 +99,8 @@ const CircularGallery = React.forwardRef<HTMLDivElement, CircularGalleryProps>(
         isDragging.current = true;
         touchMoved.current = false;
         lastTouchX.current = e.touches[0].clientX;
+        lastTouchTime.current = performance.now();
+        touchVelocity.current = 0;
         pauseAutoRotate();
       };
 
@@ -80,15 +108,33 @@ const CircularGallery = React.forwardRef<HTMLDivElement, CircularGalleryProps>(
         e.stopPropagation();
         e.preventDefault();
         if (!isDragging.current || e.touches.length === 0) return;
+
         const dx = e.touches[0].clientX - lastTouchX.current;
         if (Math.abs(dx) > 3) touchMoved.current = true;
-        setRotation((prev) => prev - dx * 0.4);
+
+        // Track smoothed velocity in rotation-degrees per 60fps frame.
+        // Swipe right (dx > 0) → positive velocity → same direction as auto-rotate.
+        const now = performance.now();
+        const dt = Math.max(now - lastTouchTime.current, 1);
+        const instantVel = (dx * 0.4) * (16 / dt);
+        touchVelocity.current = touchVelocity.current * 0.7 + instantVel * 0.3;
+        lastTouchTime.current = now;
+
+        // Positive dx = swipe right = carousel rotates right (rotation increases).
+        setRotation((prev) => prev + dx * 0.4);
         lastTouchX.current = e.touches[0].clientX;
       };
 
       const onTouchEnd = () => {
         isDragging.current = false;
-        resumeAutoRotate();
+        // Hand the swipe velocity to the tick, capped to prevent wild overshoots.
+        currentVelocity.current = Math.max(
+          -MAX_SWIPE_VELOCITY,
+          Math.min(MAX_SWIPE_VELOCITY, touchVelocity.current),
+        );
+        // Release immediately so the tick picks up currentVelocity and lerps it
+        // to autoRotateSpeed — this is what produces the gradual deceleration.
+        isInteracting.current = false;
       };
 
       el.addEventListener('touchstart', onTouchStart, { passive: true });
@@ -102,7 +148,7 @@ const CircularGallery = React.forwardRef<HTMLDivElement, CircularGalleryProps>(
         el.removeEventListener('touchend', onTouchEnd);
         el.removeEventListener('touchcancel', onTouchEnd);
       };
-    }, [pauseAutoRotate, resumeAutoRotate]);
+    }, [pauseAutoRotate]);
 
     const onWheel = useCallback(
       (e: React.WheelEvent) => {
@@ -129,7 +175,7 @@ const CircularGallery = React.forwardRef<HTMLDivElement, CircularGalleryProps>(
     const onPointerMove = useCallback((e: React.PointerEvent) => {
       if (e.pointerType === 'touch' || !isDragging.current) return;
       const dx = e.clientX - lastPointerX.current;
-      setRotation((prev) => prev - dx * 0.4);
+      setRotation((prev) => prev + dx * 0.4);
       lastPointerX.current = e.clientX;
     }, []);
 

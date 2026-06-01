@@ -13,7 +13,7 @@ import GlowLink from '@/components/GlowLink';
 import { site } from '@/lib/site';
 
 const GLOW_CLS =
-  'group relative inline-flex h-11 items-center overflow-hidden rounded-full bg-ink px-6 py-3 text-base font-medium text-white transition-all duration-200 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-signal';
+  'group relative inline-flex h-10 sm:h-11 w-full items-center justify-center overflow-hidden rounded-[9999px] bg-ink px-4 sm:px-6 py-2.5 sm:py-3 text-sm sm:text-base font-medium text-white transition-all duration-200 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-signal';
 
 function GlowGradient() {
   return (
@@ -42,7 +42,7 @@ function DockButton({
   const scale = useSpring(scaleSync, { mass: 0.1, stiffness: 150, damping: 12 });
 
   return (
-    <motion.div ref={ref} style={{ scale }}>
+    <motion.div ref={ref} style={{ scale }} className="w-full sm:w-auto">
       {children}
     </motion.div>
   );
@@ -71,7 +71,7 @@ export default function HeroButtonRow({
     <motion.div
       onMouseMove={(e) => mouseX.set(e.pageX)}
       onMouseLeave={() => mouseX.set(Infinity)}
-      className={`flex flex-wrap items-center justify-center gap-8 ${className ?? ''}`}
+      className={`grid grid-cols-2 gap-2 sm:flex sm:flex-wrap sm:items-center sm:justify-center sm:gap-8 ${className ?? ''}`}
     >
       <DockButton mouseX={mouseX}>
         <button

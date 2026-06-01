@@ -17,7 +17,7 @@ import {
 import { motion, AnimatePresence } from 'motion/react';
 
 const WEEK_DAYS = ['Su', 'Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa'];
-const RIGHT_W = 400;
+const RIGHT_W = 400; // desktop only
 
 type RightStep = 'slots' | 'form' | 'success';
 
@@ -35,6 +35,14 @@ const inputCls =
   'w-full rounded-xl border border-white/10 bg-white/5 px-4 py-2.5 text-sm text-white placeholder:text-white/30 transition-colors focus:border-signal focus:outline-none focus:ring-1 focus:ring-signal/40';
 
 export default function GlassBookingCalendar() {
+  const [isMobile, setIsMobile] = React.useState(false);
+  React.useEffect(() => {
+    const update = () => setIsMobile(window.innerWidth < 640);
+    update();
+    window.addEventListener('resize', update);
+    return () => window.removeEventListener('resize', update);
+  }, []);
+
   const today = React.useMemo(() => startOfDay(new Date()), []);
   const timeZone = React.useMemo(
     () => Intl.DateTimeFormat().resolvedOptions().timeZone,
@@ -140,11 +148,11 @@ export default function GlassBookingCalendar() {
 
   return (
     <div
-      className="flex overflow-hidden rounded-3xl border border-white/10 bg-ink/50 text-white shadow-2xl backdrop-blur-2xl"
+      className="flex flex-col sm:flex-row overflow-hidden rounded-2xl sm:rounded-3xl border border-white/10 bg-ink/50 text-white shadow-2xl backdrop-blur-2xl w-full sm:w-auto"
       aria-label="Booking calendar"
     >
       {/* ── LEFT: date grid, always visible ───────────────────────────────── */}
-      <div className="w-72 flex-shrink-0 p-5">
+      <div className="w-full sm:w-72 flex-shrink-0 p-4 sm:p-5">
         {/* Month nav */}
         <div className="mb-4 flex items-center justify-between">
           <motion.p
@@ -242,7 +250,7 @@ export default function GlassBookingCalendar() {
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             transition={{ duration: 0.2 }}
-            className="w-px flex-shrink-0 bg-white/10"
+            className={isMobile ? 'h-px w-full flex-shrink-0 bg-white/10' : 'w-px flex-shrink-0 bg-white/10'}
           />
         )}
       </AnimatePresence>
@@ -252,12 +260,12 @@ export default function GlassBookingCalendar() {
         {selectedDate && (
           <motion.div
             key="right-panel"
-            initial={{ width: 0, opacity: 0 }}
-            animate={{ width: RIGHT_W, opacity: 1 }}
-            exit={{ width: 0, opacity: 0 }}
+            initial={isMobile ? { height: 0, opacity: 0 } : { width: 0, opacity: 0 }}
+            animate={isMobile ? { height: 'auto', opacity: 1 } : { width: RIGHT_W, opacity: 1 }}
+            exit={isMobile ? { height: 0, opacity: 0 } : { width: 0, opacity: 0 }}
             transition={{ type: 'spring', duration: 0.45, bounce: 0.08 }}
             className="flex-shrink-0 overflow-hidden"
-            style={{ minHeight: 420 }}
+            style={isMobile ? undefined : { minHeight: 420 }}
           >
             <AnimatePresence mode="wait" initial={false}>
 
@@ -269,8 +277,7 @@ export default function GlassBookingCalendar() {
                   animate={{ opacity: 1, x: 0 }}
                   exit={{ opacity: 0, x: -20 }}
                   transition={{ duration: 0.2 }}
-                  className="flex h-full flex-col p-5"
-                  style={{ width: RIGHT_W }}
+                  className="flex h-full flex-col p-4 sm:p-5 w-full sm:w-[400px]"
                 >
                   <p className="mb-4 font-display text-sm font-semibold text-white/70">
                     Available times
@@ -305,7 +312,7 @@ export default function GlassBookingCalendar() {
                   )}
 
                   {!slotsLoading && slots.length > 0 && (
-                    <div className="grid grid-cols-2 gap-2 overflow-y-auto pr-1" style={{ maxHeight: 360 }}>
+                    <div className="grid grid-cols-2 gap-2 overflow-y-auto pr-1 max-h-48 sm:max-h-[360px]">
                       {slots.map((slot) => (
                         <button
                           key={slot}
@@ -328,8 +335,7 @@ export default function GlassBookingCalendar() {
                   animate={{ opacity: 1, x: 0 }}
                   exit={{ opacity: 0, x: -20 }}
                   transition={{ duration: 0.2 }}
-                  className="flex h-full flex-col p-5"
-                  style={{ width: RIGHT_W }}
+                  className="flex h-full flex-col p-4 sm:p-5 w-full sm:w-[400px]"
                 >
                   <button
                     onClick={() => setStep('slots')}

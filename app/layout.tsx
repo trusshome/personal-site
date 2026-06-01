@@ -1,4 +1,4 @@
-import type { Metadata } from 'next';
+import type { Metadata, Viewport } from 'next';
 import { Space_Grotesk, Inter, JetBrains_Mono } from 'next/font/google';
 import { Analytics } from '@vercel/analytics/next';
 import './globals.css';
@@ -26,6 +26,12 @@ const jetbrainsMono = JetBrains_Mono({
   weight: ['400', '500'],
   display: 'swap',
 });
+
+export const viewport: Viewport = {
+  width: 'device-width',
+  initialScale: 1,
+  viewportFit: 'cover',
+};
 
 export const metadata: Metadata = {
   // Sourced from lib/site.ts so the resoloution spelling never drifts. This makes
@@ -67,7 +73,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       // only; it does not hide mismatches in our own markup.
       suppressHydrationWarning
     >
-      <body className="bg-paper font-sans text-ink antialiased">
+      <body className="bg-ink font-sans text-ink antialiased">
         {children}
         <Analytics />
       </body>

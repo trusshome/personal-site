@@ -129,15 +129,36 @@ export default function HomePage() {
   const toggle = (p: Panel) => setPanel((cur) => (cur === p ? 'none' : p));
 
   // iOS 26 Liquid Glass: scroll into the runway on load so Safari composites
-  // real in-flow shader pixels behind its chrome instead of the root color.
+  // real in-flow shader pixels behind its chrome, then pin scroll to that
+  // offset so the document cannot be scrolled away. The runway must stay
+  // (Safari needs scrollY > 0) so we lock the position instead of disabling
+  // scroll. Panels still scroll internally — their overflow is separate from
+  // the window scroll, so this pin never interferes with them.
   useEffect(() => {
-    const offset =
-      Number.parseFloat(
-        getComputedStyle(document.documentElement).getPropertyValue('--safari-scroll-offset'),
-      ) || 0;
-    if (matchMedia('(max-width: 760px)').matches && window.scrollY < offset) {
-      window.scrollTo({ top: offset, left: 0, behavior: 'instant' as ScrollBehavior });
-    }
+    const isMobile = matchMedia('(max-width: 760px)').matches;
+    const offset = isMobile
+      ? Number.parseFloat(
+          getComputedStyle(document.documentElement).getPropertyValue('--safari-scroll-offset'),
+        ) || 0
+      : 0;
+
+    const instant = 'instant' as ScrollBehavior;
+    window.scrollTo({ top: offset, left: 0, behavior: instant });
+
+    let raf = 0;
+    const pin = () => {
+      cancelAnimationFrame(raf);
+      raf = requestAnimationFrame(() => {
+        if (Math.abs(window.scrollY - offset) > 0.5) {
+          window.scrollTo({ top: offset, left: 0, behavior: instant });
+        }
+      });
+    };
+    window.addEventListener('scroll', pin, { passive: true });
+    return () => {
+      window.removeEventListener('scroll', pin);
+      cancelAnimationFrame(raf);
+    };
   }, []);
 
   return (
@@ -167,6 +188,7 @@ export default function HomePage() {
           style={{
             zIndex: 1,
             overflowY: 'auto',
+            overscrollBehavior: 'contain',
             paddingTop: 'calc(env(safe-area-inset-top) + 8px)',
             paddingBottom: 'calc(env(safe-area-inset-bottom) + 24px)',
           }}

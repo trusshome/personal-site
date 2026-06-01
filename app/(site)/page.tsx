@@ -124,44 +124,43 @@ const PANEL_ANIM = {
   exit:    { opacity: 0, y: -6,  scale: 0.98, transition: PANEL_EXIT },
 };
 
-// iOS 26 Safari Liquid Glass: at scrollY 0 Safari samples the root CSS
-// background-color behind its chrome, not the visible media. We give the
-// document a small scroll runway and scroll into it on load so Safari has
-// non-zero scroll and composites the real shader pixels behind the bars.
-const RUNWAY = 120;
-
 export default function HomePage() {
   const [panel, setPanel] = useState<Panel>('none');
   const toggle = (p: Panel) => setPanel((cur) => (cur === p ? 'none' : p));
 
+  // iOS 26 Liquid Glass: scroll into the runway on load so Safari composites
+  // real in-flow shader pixels behind its chrome instead of the root color.
   useEffect(() => {
-    window.scrollTo(0, RUNWAY);
+    const offset =
+      Number.parseFloat(
+        getComputedStyle(document.documentElement).getPropertyValue('--safari-scroll-offset'),
+      ) || 0;
+    if (matchMedia('(max-width: 760px)').matches && window.scrollY < offset) {
+      window.scrollTo({ top: offset, left: 0, behavior: 'instant' as ScrollBehavior });
+    }
   }, []);
 
   return (
-    <>
-      {/* MEDIA LAYER. The fixed wrapper carries no background-color or
-          backdrop-filter itself (iOS 26 would tint the toolbar). The shader
-          and tint sit on absolute children, and the shader bleeds above and
-          below the visual viewport so Safari's chrome sees real content. */}
+    <div style={{ position: 'relative', display: 'flow-root' }}>
+      {/* MEDIA STAGE. In normal flow (not fixed/absolute) so iOS 26 composites
+          its real pixels behind the Safari chrome once scrolled. Bleeds above
+          and below the visual viewport into the status bar and toolbar areas. */}
       <div
         aria-hidden
-        style={{ position: 'fixed', top: 0, left: 0, width: '100vw', height: '100vh', zIndex: 0 }}
+        style={{
+          height: 'calc(100dvh + var(--safari-top-bleed) + var(--safari-bottom-bleed))',
+          marginTop: 'calc(-1 * var(--safari-top-bleed))',
+        }}
       >
-        <div style={{ position: 'absolute', top: '-15vh', left: 0, width: '100%', height: '130vh' }}>
-          <ShaderAnimation className="h-full w-full" />
-        </div>
-        <div style={{ position: 'absolute', inset: 0, backgroundColor: 'rgba(20,23,28,0.3)' }} />
+        <ShaderAnimation className="h-full w-full" />
       </div>
 
-      {/* Top runway. An explicit spacer (not margin, which would collapse) so the
-          document scrolls above the hero and Safari composites the shader behind
-          the status bar. Scrolled out of view on load. */}
-      <div aria-hidden style={{ height: RUNWAY }} />
-
+      {/* CONTENT OVERLAY. Absolute (it does not need to tint the chrome), anchored
+          to the visible viewport and padded inward with the safe-area insets. */}
       <section
-          className="relative flex flex-col items-center justify-center px-4 sm:px-6 text-center"
+          className="absolute left-0 right-0 flex flex-col items-center justify-center px-4 sm:px-6 text-center"
           style={{
+            top: 'var(--safari-top-bleed)',
             minHeight: '100dvh',
             zIndex: 1,
             paddingTop: 'env(safe-area-inset-top)',
@@ -231,10 +230,6 @@ export default function HomePage() {
           </motion.div>
         </div>
       </section>
-
-      {/* Bottom runway. Keeps the document scrollable past the visual viewport
-          so Safari composites the shader behind the bottom toolbar too. */}
-      <div aria-hidden style={{ height: RUNWAY }} />
-    </>
+    </div>
   );
 }

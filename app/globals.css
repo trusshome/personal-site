@@ -19,6 +19,26 @@
 /* ─── Base ──────────────────────────────────────────────────────────── */
 *, *::before, *::after { box-sizing: border-box; }
 
+/* ─── iOS 26 Safari Liquid Glass viewport fix ───────────────────────────
+   Safari 26 samples the root CSS background-color behind its chrome at
+   scrollY 0, and ignores theme-color. A scroll runway (body min-height >
+   viewport + scroll on load) flips Safari into compositing real in-flow
+   pixels behind the bars. Media must bleed past the viewport, in normal
+   flow (fixed/absolute layers are not composited behind the chrome). */
+:root {
+  --safari-chrome-bg: #14171C;
+  --safari-top-bleed: 62px;
+  --safari-bottom-bleed: 136px;
+  --safari-scroll-offset: var(--safari-top-bleed);
+}
+
+html {
+  min-height: 100%;
+  overflow-y: scroll;
+  overscroll-behavior: none;
+  background-color: var(--safari-chrome-bg);
+}
+
 /* Lenis smooth-scroll */
 html.lenis, html.lenis body { height: auto; }
 .lenis.lenis-smooth { scroll-behavior: auto !important; }
@@ -27,8 +47,10 @@ html.lenis, html.lenis body { height: auto; }
 
 body {
   font-family: var(--font-sans);
-  background: var(--color-paper);
+  background-color: var(--safari-chrome-bg);
   color: var(--color-ink);
+  margin: 0;
+  min-height: calc(100dvh + var(--safari-scroll-offset));
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   line-height: 1.6;

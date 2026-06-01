@@ -75,11 +75,10 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html
       lang="en"
-      className={`${spaceGrotesk.variable} ${inter.variable} ${jetbrainsMono.variable} bg-ink`}
-      style={{ backgroundColor: '#14171C' }}
+      className={`${spaceGrotesk.variable} ${inter.variable} ${jetbrainsMono.variable}`}
       suppressHydrationWarning
     >
-      <body className="bg-ink font-sans text-ink antialiased" style={{ backgroundColor: '#14171C' }}>
+      <body className="font-sans text-ink antialiased">
         {children}
         <Analytics />
       </body>

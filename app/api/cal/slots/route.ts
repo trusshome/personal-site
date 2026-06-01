@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from 'next/server';
 
 const BASE = 'https://api.cal.com/v2';
 
+const DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
+
 let cachedEventTypeId: number | null = null;
 
 async function getEventTypeId(apiKey: string): Promise<number> {
@@ -34,7 +36,22 @@ export async function GET(req: NextRequest) {
   const date = searchParams.get('date');
   const timeZone = searchParams.get('timeZone') ?? 'UTC';
 
-  if (!date) return NextResponse.json({ error: 'date param required' }, { status: 400 });
+  if (!date) {
+    return NextResponse.json({ error: 'date param required' }, { status: 400 });
+  }
+
+  // Reject anything that is not a well-formed YYYY-MM-DD date string.
+  if (!DATE_RE.test(date)) {
+    return NextResponse.json({ error: 'Invalid date format' }, { status: 400 });
+  }
+
+  // Reject past dates — availability only makes sense in the future.
+  const requested = new Date(`${date}T00:00:00Z`);
+  const todayUTC = new Date();
+  todayUTC.setUTCHours(0, 0, 0, 0);
+  if (requested < todayUTC) {
+    return NextResponse.json({ slots: [], eventTypeId: null }, { status: 200 });
+  }
 
   try {
     const eventTypeId = await getEventTypeId(apiKey);
@@ -57,7 +74,7 @@ export async function GET(req: NextRequest) {
 
     const data = await res.json();
 
-    // v2 wraps the payload: { status, data: { "YYYY-MM-DD": [...] } }
+    // v2 returns { status, data: { "YYYY-MM-DD": [{ start: "..." }] } }
     const slotsMap = data.data ?? data.slots ?? {};
     const raw: unknown[] = slotsMap[date] ?? [];
     const slots: string[] = raw.map((s) =>
@@ -67,7 +84,7 @@ export async function GET(req: NextRequest) {
     );
 
     return NextResponse.json({ slots, eventTypeId });
-  } catch (err: any) {
-    return NextResponse.json({ error: err.message }, { status: 500 });
+  } catch {
+    return NextResponse.json({ error: 'Could not load availability' }, { status: 500 });
   }
 }

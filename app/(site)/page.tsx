@@ -130,12 +130,21 @@ export default function HomePage() {
 
   return (
     <>
-      <section className="relative isolate flex min-h-screen [height:100dvh] flex-col items-center justify-center px-4 sm:px-6 text-center" style={{ paddingTop: 'env(safe-area-inset-top)', paddingBottom: 'env(safe-area-inset-bottom)' }}>
-        {/* Fixed so the shader truly fills the screen including safe areas on iOS */}
-        <div className="fixed inset-0 -z-10">
+      <section
+          className="relative isolate flex flex-col items-center justify-center px-4 sm:px-6 text-center"
+          style={{
+            minHeight: '100vh',
+            height: '100dvh',
+            paddingTop: 'env(safe-area-inset-top)',
+            paddingBottom: 'env(safe-area-inset-bottom)',
+          }}
+        >
+        {/* z-index 0: positioned above body background so iOS reads the shader
+            colour when determining the glass chrome effect behind the bars */}
+        <div className="fixed inset-0" style={{ zIndex: 0 }}>
           <ShaderAnimation className="h-full w-full" />
         </div>
-        <div className="fixed inset-0 -z-10 bg-ink/30" aria-hidden />
+        <div className="fixed inset-0" style={{ zIndex: 0, backgroundColor: 'rgba(20,23,28,0.3)' }} aria-hidden />
 
         <div className="relative z-10 flex flex-col items-center gap-0 w-full">
           <h1 className="font-display text-[1.75rem] font-medium tracking-tight sm:text-5xl lg:text-7xl whitespace-nowrap">

@@ -69,12 +69,10 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
     <html
       lang="en"
       className={`${spaceGrotesk.variable} ${inter.variable} ${jetbrainsMono.variable} bg-ink`}
-      // A browser extension injects data-theme and theme CSS vars onto <html>
-      // before hydration. Suppress the resulting attribute diff on this element
-      // only; it does not hide mismatches in our own markup.
+      style={{ backgroundColor: '#14171C' }}
       suppressHydrationWarning
     >
-      <body className="bg-ink font-sans text-ink antialiased">
+      <body className="bg-ink font-sans text-ink antialiased" style={{ backgroundColor: '#14171C' }}>
         {children}
         <Analytics />
       </body>

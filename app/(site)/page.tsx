@@ -130,7 +130,7 @@ export default function HomePage() {
 
   return (
     <>
-      <section className="relative isolate flex min-h-dvh flex-col items-center justify-center px-4 sm:px-6 text-center" style={{ paddingTop: 'env(safe-area-inset-top)', paddingBottom: 'env(safe-area-inset-bottom)' }}>
+      <section className="relative isolate flex min-h-screen [height:100dvh] flex-col items-center justify-center px-4 sm:px-6 text-center" style={{ paddingTop: 'env(safe-area-inset-top)', paddingBottom: 'env(safe-area-inset-bottom)' }}>
         {/* Fixed so the shader truly fills the screen including safe areas on iOS */}
         <div className="fixed inset-0 -z-10">
           <ShaderAnimation className="h-full w-full" />

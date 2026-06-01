@@ -155,16 +155,17 @@ export default function HomePage() {
         <ShaderAnimation className="h-full w-full" />
       </div>
 
-      {/* CONTENT OVERLAY. Absolute (it does not need to tint the chrome), anchored
-          to the visible viewport and padded inward with the safe-area insets. */}
+      {/* CONTENT OVERLAY. Fixed to the viewport so the runway scroll only moves
+          the in-flow shader behind it, never the content. Carries no background
+          (so it does not tint the chrome). Scrolls internally if a panel grows
+          taller than the screen, leaving the document scroll locked to the runway. */}
       <section
-          className="absolute left-0 right-0 flex flex-col items-center justify-center px-4 sm:px-6 text-center"
+          className="fixed inset-0 flex flex-col items-center justify-center px-4 sm:px-6 text-center"
           style={{
-            top: 'var(--safari-top-bleed)',
-            minHeight: '100dvh',
             zIndex: 1,
-            paddingTop: 'env(safe-area-inset-top)',
-            paddingBottom: 'calc(env(safe-area-inset-bottom) + 16px)',
+            overflowY: 'auto',
+            paddingTop: 'calc(env(safe-area-inset-top) + 8px)',
+            paddingBottom: 'calc(env(safe-area-inset-bottom) + 24px)',
           }}
         >
         <div className="relative z-10 flex flex-col items-center gap-0 w-full">

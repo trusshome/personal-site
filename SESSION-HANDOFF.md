@@ -1,7 +1,7 @@
 # Session Handoff. Entity resoLOUtion
 
 Owner. Luciano Tarabocchia II (Lou)
-Last updated. Monday, June 2 2026
+Last updated. Sunday, June 1 2026
 Read with. CLAUDE.md for brand and conventions, build-plan.md for the step sequence, prompts.md for the copy paste prompts, site-standup.md for the running log.
 
 This file lets a brand new session resume the build cold, with no chat history, and go straight to the next step. It matches what is on disk, not memory.
@@ -14,9 +14,9 @@ What it is. A personal showcase site for Lou that positions him as a builder who
 
 The single conversion. Book a call.
 
-Domain. www.entityresoloution.com. The name Lou sits inside resoLOUtion, the pun is the brand. Bought on Namecheap, DNS not pointed anywhere yet.
+Domain. www.entityresoloution.com. Live. SSL active on www, apex still propagating (check entityresoloution.com without www if not yet).
 
-Booking. Cal.com, https://cal.com/entity-resoloution. The spelling is deliberate, resoloution not resolution. The event type slug is 30min.
+Booking. Cal.com, https://cal.com/entity-resoloution. Event type slug is 30min. The spelling is deliberate, resoloution not resolution.
 
 Brand idea. Direction A, Resolution. Scattered things resolving into one clear answer. Clean, technical, calm. One electric accent does the talking. The wordmark lights LOU so Lou's name is the visual hook.
 
@@ -24,11 +24,20 @@ Brand idea. Direction A, Resolution. Scattered things resolving into one clear a
 
 ## Stack and structure
 
-Stack. Next.js 16.2.6 App Router, React 19.2.4, TypeScript, Tailwind v4 via @tailwindcss/postcss, motion for animation, three.js for the hero WebGL shader, date-fns for the calendar, lucide-react for icons, Vercel Analytics. Deploy target is Vercel.
+Stack. Next.js 16.2.6 App Router, React 19.2.4, TypeScript, Tailwind v4 via @tailwindcss/postcss, motion for animation, three.js for the hero WebGL shader, date-fns for the calendar, lucide-react for icons, Vercel Analytics. Deployed on Vercel.
 
-Tokens. Live as CSS variables in app/globals.css inside the Tailwind v4 @theme block. Reference tokens by name in components, never raw hex. The one documented exception is app/opengraph-image.tsx and components/ShaderAnimation.tsx, both use hex that mirrors the tokens because they run without the DOM.
+Git. github.com/trusshome/personal-site (private). Branch main. Author hello@trusshomeco.com / trusshome.
 
-Route group. Site chrome was removed. The (site) layout now holds only the main wrapper, no Nav or Footer. The home, about, and work routes sit inside app/(site). The book page sits at app/book/page.tsx. The home page is a full-bleed dark hero with no top nav.
+Vercel. Project personal-site under truss-home-s-projects team. Deployed to production. CAL_COM_API_KEY set in Vercel environment (production). The BOM issue is fixed — the key was re-added using raw ASCII bytes via cmd stdin redirect.
+
+Tokens. Live as CSS variables in app/globals.css inside the Tailwind v4 @theme block. Reference tokens by name in components, never raw hex.
+
+Route group. The (site) layout holds only the main wrapper. Home, about, and work routes sit inside app/(site). Book sits at app/book/page.tsx. Home page is full-bleed dark hero. No Nav or Footer mounted anywhere.
+
+Pages live now.
+
+- / (home) — the only public page. Everything else returns notFound().
+- /about, /work, /work/[slug], /book — all return notFound(). Files kept in place for future use.
 
 On disk now.
 
@@ -37,33 +46,104 @@ app/
   layout.tsx              root, html plus body plus fonts plus metadata plus Analytics
   globals.css             Direction A tokens, base, animations, reduced motion
   opengraph-image.tsx     dynamic 1200 by 630 OG image
-  sitemap.ts              reads publishedStudies()
-  robots.ts               allows all, points to the sitemap
+  sitemap.ts              returns only / (all other pages are 404)
+  robots.ts               allows all, points to sitemap
   (site)/
     layout.tsx            main wrapper only, no Nav or Footer
-    page.tsx              hero with WebGL shader, glass booking calendar
-    about/page.tsx
-    work/page.tsx         the showcase index
-    work/[slug]/page.tsx  one case study per slug
-  book/page.tsx           funnel endpoint, no chrome
+    page.tsx              hero — client component, manages panel state
+    about/page.tsx        notFound() placeholder
+    work/page.tsx         notFound() placeholder
+    work/[slug]/page.tsx  notFound() placeholder, generateStaticParams returns []
+  book/page.tsx           notFound() placeholder
   api/
     cal/
-      slots/route.ts      proxies Cal.com availability to the client
-      book/route.ts       proxies Cal.com booking creation to the client
+      slots/route.ts      proxies Cal.com v2 availability (GET /v2/slots)
+      book/route.ts       proxies Cal.com v2 booking (POST /v2/bookings)
 components/
   Wordmark.tsx
-  Nav.tsx                 exists but not used in layout (kept for future use)
-  Footer.tsx              exists but not used in layout (kept for future use)
-  CTAButton.tsx           delegates to GlowLink, keeps analytics + cal link
+  Nav.tsx                 exists but not mounted
+  Footer.tsx              exists but not mounted
+  CTAButton.tsx           delegates to GlowLink, fires book_a_call analytics
   GlowLink.tsx            shared glow-pill visual for all CTA buttons
-  HeroButtonRow.tsx       dock magnification row with Projects, Book, Find Me
-  GlassBookingCalendar.tsx three-step on-page booking: date > time slots > form > success
+  HeroButtonRow.tsx       dock magnification row — Projects, Data, Book, Find Me
+  GlassBookingCalendar.tsx  three-step on-page booking: date > slots > form > success
   ShaderAnimation.tsx     three.js WebGL line-field for the hero background
-  ProjectCard.tsx
-  ResolveAnim.tsx         original dots animation, now unused, safe to delete
-content/      work.ts, the typed case study source
-lib/          site.ts (config plus cal link plus calEvent plus linkedin), analytics.ts
+  ProjectCard.tsx         kept on disk, not used on any live page
+  ResolveAnim.tsx         original dots animation, not used, safe to delete
+  SiteHeader.tsx          not used
+  ui/
+    circular-gallery.tsx  3D rotating card carousel used in hero panels
+    focus-rail.tsx        3D swipeable rail used on /work (currently 404)
+content/      work.ts — typed case studies. Truss Home and ESP published, Jets removed.
+lib/          site.ts (config, cal link, calEvent, linkedin), analytics.ts, utils.ts (cn helper)
 ```
+
+---
+
+## Hero page panel system
+
+The hero (app/(site)/page.tsx) is a client component managing a panel state.
+
+```
+type Panel = 'none' | 'book' | 'projects' | 'data'
+```
+
+Four dock buttons: Projects, Data, Book, Find Me.
+
+- Projects — opens CircularGallery with 5 placeholder project cards (no hrefs yet)
+- Data — opens CircularGallery with 6 PDL use case cards (no hrefs yet)
+- Book — opens GlassBookingCalendar
+- Find Me — external link to site.linkedin
+
+Opening any panel closes the current one. AnimatePresence with fast 150ms exit + motion.div layout spring handles the height transition without the snap/pause that existed before.
+
+---
+
+## CircularGallery
+
+components/ui/circular-gallery.tsx
+
+A 3D rotating card carousel. Cards rotate on a ring with perspective 2000px. Interaction: drag to spin, wheel to spin, auto-rotate when idle (pauses on interaction, resumes after 800ms). Clicking a card navigates to its href (if set).
+
+GalleryItem type:
+```ts
+{
+  title: string
+  subtitle: string
+  label?: string
+  photo: { url: string; alt: string; pos?: string }
+  href?: string
+}
+```
+
+Used in page.tsx with radius=360, autoRotateSpeed=0.04.
+
+Project cards: 5 placeholder cards in galleryItems. All photo URLs are Unsplash. No hrefs set yet.
+Data cards: 6 PDL use case cards in dataItems (Fan Enrichment, Lead Intelligence, Talent Mapping, Market Sizing, ICP Builder, Network Graph). No hrefs set yet.
+
+When Lou is ready to add real projects, update galleryItems in page.tsx with real title, subtitle, photo.url (screenshot or real image), and href pointing to the case study or blog post.
+
+When Lou builds the blog, update dataItems hrefs to point to /blog/slug.
+
+---
+
+## Cal.com API — v2
+
+Both routes were migrated from Cal.com API v1 (decommissioned) to v2 in this session.
+
+slots/route.ts:
+- GET https://api.cal.com/v2/event-types — header Authorization: Bearer key, cal-api-version: 2024-06-14
+- Response: { status, data: [...] } — find slug 30min, cache id
+- GET https://api.cal.com/v2/slots — header cal-api-version: 2024-09-04
+- Response: { status, data: { "YYYY-MM-DD": [{ start: "..." }] } } — date map directly in data, not nested under slots key
+- Returns { slots: string[], eventTypeId: number } to the client
+
+book/route.ts:
+- POST https://api.cal.com/v2/bookings — header cal-api-version: 2026-02-25
+- Body: { eventTypeId, start, attendee: { name, email, timeZone }, bookingFieldsResponses: { notes } }
+- Response: { status, data: { uid, start } } — returns { uid, startTime: booking.start } to client
+
+GlassBookingCalendar sends name, email, notes, timeZone, start, eventTypeId to /api/cal/book and expects { uid, startTime } back. No changes needed to the component.
 
 ---
 
@@ -71,128 +151,76 @@ lib/          site.ts (config plus cal link plus calEvent plus linkedin), analyt
 
 Tokens. ink #14171C, paper #F7F5F0, signal #2F6BFF, signal-dark #1F54D6, signal-tint #E7EEFF, slate #5A626E, hairline #E3E0D8, cyan-motion #11C5D4.
 
-One accent rule. signal is the only call to action color. cyan-motion exists in the hero shader and in the glow pill gradient.
+One accent rule. signal is the only CTA color. The glow-pill buttons use a gradient from signal through signal-dark to cyan-motion — this was a deliberate product decision that extends cyan-motion into the button UI. CLAUDE.md still documents the original rule.
 
-Note on glow pills. The CTA buttons across the site use a gradient glow from signal through signal-dark to cyan-motion. This extends cyan-motion beyond the hero animation, which was a deliberate product decision. CLAUDE.md still documents the original rule; update it to reflect the button glow if you want the spec and the build to agree.
+Wordmark rule. entity reso[LOU]tion — entity, reso, tion in ink (or paper on dark). LOU in signal, same weight.
 
-Wordmark rule. Render the name as one unbroken word, entity resoLOUtion, with entity, reso, and tion in ink and LOU in signal at the same weight.
-
-Hero. Full-bleed dark section using the three.js WebGL shader. Background is ink with lines blending cyan-motion into signal. Headline uses Wordmark dark prop (paper letters, LOU stays signal). No top nav on the home page.
+Hero. Full-bleed dark, WebGL shader background. No top nav on any page currently.
 
 ---
 
-## What shipped, step by step
+## What shipped in this session
 
-Steps 1 through 7. Scaffold, brand primitives, hero, work showcase, about, book, analytics and SEO. All done and verified before this session. See previous SESSION-HANDOFF entries for detail.
+Cal.com v1 to v2 migration. Both API routes rewritten. Fixed the slot parsing bug (data.data is the date map, not data.data.slots). Smoke tested on production.
 
-Step 7 verification. npm run build exits 0. All routes return correct status. ESP 404. Sitemap correct. OG image 1200 by 630.
+Circular gallery. Built components/ui/circular-gallery.tsx — 3D ring carousel with drag, wheel, and auto-rotate. Replaced the FocusRail-based hero panel and the HeroProjectCards component (deleted). Work page still has FocusRail but returns notFound.
 
-### What changed this session (June 2 2026)
+Hero panel system. Four buttons (Projects, Data, Book, Find Me). Panel state manages mutual exclusivity. AnimatePresence + motion.div layout smooths open/close transitions — fixed the snap and pause that previously appeared when toggling panels.
 
-Hero animation reworked then replaced.
-- components/ResolveAnim.tsx was debugged and reworked extensively. The scatter was made to fill the full hero using a circular distribution. A rotating spiral collapse was added using a rotation spring on the container. Cursor follow replaced click-and-drag.
-- Then replaced entirely by components/ShaderAnimation.tsx, a three.js WebGL line-field. The shader runs in an ink base with lines blending cyan-motion into signal. Honors reduced motion by rendering one static frame. Cleans up on unmount.
+Data gallery. Six PDL use case cards added as a separate panel in the hero.
 
-Nav and footer removed.
-- app/(site)/layout.tsx stripped to a bare main wrapper. Nav.tsx and Footer.tsx files still exist but are not mounted anywhere.
-- The home page lost its top nav. About and work pages also have no nav now.
-- The work showcase teaser section below the hero was removed.
+Pre-deploy audit. HeroProjectCards.tsx deleted (unused, type error). focus-rail.tsx transition type fixed. All pages except / return notFound. Sitemap trimmed to / only. .gitignore created.
 
-CTA button restyled.
-- components/GlowLink.tsx created as the shared visual. Renders either a next/link or an external anchor. The glow is a gradient from signal via signal-dark to cyan-motion, 50 percent opacity, blurs on hover to 90 percent.
-- components/CTAButton.tsx refactored to delegate to GlowLink. Keeps the cal link and the book_a_call analytics event.
-- All buttons now use an ArrowUpRight icon from lucide-react.
-- Default label changed from Book a call to Book.
-
-Hero button row.
-- components/HeroButtonRow.tsx. Three glow-pill buttons in a dock row with mouse-proximity magnification (motion spring, scale 1 to 1.08). Buttons are Projects (to /work), Book (toggles glass calendar), Find Me (to LinkedIn).
-- LinkedIn URL stored in lib/site.ts as site.linkedin. URL is https://www.linkedin.com/in/entity-resoloution/.
-
-Glass booking calendar.
-- components/GlassBookingCalendar.tsx. Three-step horizontal layout inside one persistent glass card.
-  - Left column: monthly grid date picker with past dates disabled and today dot in signal.
-  - Right column, step 1: time slot grid fetched live from /api/cal/slots. Loading spinner, error state, retry.
-  - Right column, step 2: booking form with name, email, notes. Glow confirm button. Validation.
-  - Right column, step 3: animated signal checkmark, confirmed date and time, email confirmation note.
-- The glass card stays mounted through all steps so the blur and border never disappear.
-
-Cal.com API routes.
-- app/api/cal/slots/route.ts. Fetches the 30min event type ID from Cal.com (cached per server process), then fetches available slots for the requested date. Proxied server-side so the API key never reaches the browser.
-- app/api/cal/book/route.ts. Creates a Cal.com booking from the form submission. Handles the 30-minute end time automatically.
-- Both read CAL_COM_API_KEY from process.env. Neither file has the key hardcoded.
-
-Cal.com MCP.
-- claude mcp add --transport http cal https://mcp.cal.com/mcp --scope user was run.
-- The server is registered in Claude Code but needs OAuth to connect. The OAuth route is https://cal.com/integrate.
-- The REST API key (cal_live_...) was accidentally shared in chat and must be treated as compromised. Lou should revoke it at cal.com/settings/developer/api-keys and generate a new one.
-- New key must be added to personal-site/.env.local as CAL_COM_API_KEY=new_key.
-
-hydration warning fixed.
-- app/layout.tsx got suppressHydrationWarning on the html element. A browser extension was injecting data-theme and CSS vars before hydration.
-
-New dependencies.
-- three and @types/three for the WebGL shader.
-- lucide-react for icons.
-- date-fns for the calendar date math.
-- All installed with npm install --force due to a platform binary lock in the lockfile.
-
----
-
-## Guardrails that must stay true
-
-ESP is a draft and must 404. Enforced in app/(site)/work/[slug]/page.tsx via dynamicParams false and notFound.
-
-ESP copy must never serialize to the client. The work index uses publishedStudies() which filters ESP server-side.
-
-PDL data stays fabricated and labeled. The Jets / PDL study carries sampleData true in content/work.ts. ProjectCard shows a Sample data badge.
-
-One Book action per page. Every action uses CTAButton which reads site.cal. The home page now has a glass calendar as the booking surface, not a link.
-
-resoLOUtion spelling never corrected. site.cal and site.calEvent and site.url and site.linkedin all live in lib/site.ts. Nothing retyped anywhere.
-
-Reduced motion honored. ShaderAnimation renders one static frame. globals.css disables fade animations.
+Git and deploy.
+- git init inside personal-site, branch main
+- Pushed to github.com/trusshome/personal-site (private)
+- All commits authored as hello@trusshomeco.com / trusshome (history rewritten and force-pushed)
+- Deployed to Vercel production via vercel --prod
+- vercel.json added with framework: nextjs (was needed because the pre-existing Vercel project had no framework set)
+- CAL_COM_API_KEY added to Vercel — first two attempts had BOM corruption from PowerShell pipe encoding. Fixed by writing raw ASCII bytes to a temp file and redirecting via cmd stdin.
+- Namecheap DNS configured. www.entityresoloution.com is live (200). Apex propagating.
+- Production smoke test passed: Cal.com slots API returns real data (11 slots, eventTypeId 5863479).
 
 ---
 
 ## Gotchas
 
-personal-site has no git repo. The folder is untracked inside the home repo at C:\Users\ltara. A git init plan was drawn up but never executed. The plan: init inside personal-site, set main branch, write .gitignore, secret scan, one initial commit, create private GitHub repo as trusshome account using gh, push. Run this before Step 8.
+CAL_COM_API_KEY and PowerShell BOM. If you ever need to re-add this env var to Vercel, do NOT pipe it directly from PowerShell — PS adds a BOM (0xFEFF) which corrupts the Authorization header. Use raw bytes via cmd stdin redirect:
+```powershell
+$keyBytes = [System.Text.Encoding]::ASCII.GetBytes($key)
+[System.IO.File]::WriteAllBytes("$env:TEMP\vkey.txt", $keyBytes)
+cmd /c "vercel env add CAL_COM_API_KEY production < %TEMP%\vkey.txt"
+Remove-Item "$env:TEMP\vkey.txt" -Force
+```
 
-npm install needs --force. The lockfile has a platform-specific binary that blocks normal installs on this machine. Always use npm install --force for new packages.
+npm install needs --force. The lockfile has a platform-specific binary that blocks normal installs. Always use npm install --force for new packages.
 
-Orphaned dev server. A dev server for this project runs on port 3000 (PID noted as 12068 in a prior session). Check before starting a new one. Next auto-bumps to port 3001 if 3000 is taken.
+Orphaned dev server. Kill all node before starting a fresh dev server to avoid stale port conflicts.
 
-Cal.com API key is compromised. The key cal_live_9f6cedd78486a164751772aa7b43be19 was shared in plaintext in the session chat. Lou must revoke it at cal.com/settings/developer/api-keys before doing anything else.
-
-.env.local does not exist. Create it with the new Cal.com API key before testing the booking calendar or running npm run build in production mode.
+.env.local is not in git. It is on disk locally but excluded by .gitignore. It contains CAL_COM_API_KEY. The production value is already set in Vercel.
 
 ---
 
 ## Current state
 
-Home page is a full-bleed WebGL shader hero with the wordmark, three glow-pill dock buttons (Projects, Book, Find Me), and a glass booking calendar that opens when Book is clicked. The calendar picks a date, fetches live Cal.com slots, and submits a booking through Next.js API routes. No nav or footer on any page.
-
-npm run build exits 0. The build cannot verify the Cal.com API calls because CAL_COM_API_KEY is not set in the environment, but the routes compile cleanly.
-
-No git repo for personal-site. No .env.local. Both are blockers for Step 8.
+www.entityresoloution.com is live. The hero page shows the full-bleed WebGL shader, entity resoLOUtion wordmark, four dock buttons, and the correct panel for whichever button is active. Booking calendar fetches real Cal.com slots and completes bookings. All other pages return 404. Sitemap shows only /. GitHub repo is clean and authored correctly.
 
 ---
 
-## Next step
+## Next steps
 
-Do git setup before Step 8.
-
-1. Revoke the compromised Cal.com API key and generate a new one.
-2. Add the new key to personal-site/.env.local.
-3. Init the personal-site git repo: git init inside personal-site, set branch main, write .gitignore (node_modules, .next, .vercel, out, build, .env and .env.*, *.log, .DS_Store), secret scan, initial commit with message Initial commit, Entity resoLOUtion site through Step 7 plus hero redesign, create private GitHub repo personal-site under trusshome using gh, push.
-4. Run Step 8 from prompts.md: deploy to Vercel, point www.entityresoloution.com, confirm SSL, confirm book_a_call event records in the deployed environment.
+1. Replace placeholder gallery cards with real project photos and titles when ready.
+2. Build blog repository and wire dataItems hrefs to /blog/slug.
+3. Confirm ESP written permission and publish the case study (change status to published in content/work.ts and restore work page).
+4. Verify book_a_call analytics event is recording in Vercel Analytics dashboard.
+5. Confirm apex domain (entityresoloution.com without www) once DNS propagates.
 
 ---
 
 ## How to resume
 
-1. Read CLAUDE.md, build-plan.md, this file, and prompts.md, in that order.
-2. Confirm the ui-ux-pro-max and 21st.dev connectors are on before any UI work.
-3. Check that the compromised API key has been revoked and .env.local has a fresh key.
-4. Run git setup (see above), then Step 8 from prompts.md.
-5. Honor the shared rules. Plan first and wait for go, tests first, implement the minimum, verify, document, review as an attacker. Reference tokens never raw hex, one accent signal. Active voice, no dashes.
+1. Read CLAUDE.md, build-plan.md, this file, and prompts.md in that order.
+2. Confirm the live site is up at www.entityresoloution.com before making changes.
+3. Use npm install --force for any new packages.
+4. Do not pipe env vars through PowerShell — use the cmd stdin redirect method documented in Gotchas.
+5. Honor the shared rules. Plan first and wait for go, tests first, implement the minimum, verify, document.

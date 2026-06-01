@@ -1,130 +1,111 @@
 # Personal Site Standup
 
 Owner. Luciano Tarabocchia II (Lou)
-Project. Personal showcase site
-Domain. www.entityresoloution.com (Entity resoLOUtion, the name is baked into the brand)
+Project. Entity resoLOUtion personal showcase site
+Domain. www.entityresoloution.com (live)
 Folder. 007 - TrussHomeCo / 002 - ClaudeCode / personal-site
-Last updated. Monday, June 2 2026
+Last updated. Sunday, June 1 2026
 
 This is the running standup for the personal site. Read it before each new session so you know the goal, where the work stands, what is in flight, what changed, what failed, and the one next step. Keep it current.
 
 ---
 
-## Goal (what we are building)
+## Goal
 
-A personal showcase site that positions Lou as a builder who ships real solutions and turns LinkedIn traffic into booked discovery calls. The single conversion is book a call to talk about a solution.
-
-Core pages.
-
-- Hero. WebGL shader background, wordmark, three glow-pill dock buttons, glass booking calendar.
-- Project showcase. Three proof pieces, Truss Home, ESP Development (draft), Jets / PDL demo.
-- About. Short story on the builder, framed around entity resolution and shipping.
-- Book a call. The single funnel endpoint, one slot picker, no competing actions.
+A personal showcase site that positions Lou as a builder who ships real solutions and turns LinkedIn traffic into booked discovery calls. Single conversion: book a call.
 
 ---
 
-## Current state (where the work stands right now)
+## Current state
 
-Steps 1 through 7 complete. Analytics, SEO, and content are all wired. npm run build exits 0.
+Site is deployed and live at www.entityresoloution.com. Only the hero page is public. All other routes return 404.
 
-This session brought the hero to a dramatically different visual direction. The original resolving-dots animation was debugged and reworked extensively, then replaced with a three.js WebGL line-field shader. The CTA buttons were restyled with a glow-pill treatment and dock magnification. A full glass booking calendar was built on the home page so visitors can select a date, see Cal.com availability, and complete a booking without leaving the page.
+GitHub: trusshome/personal-site (private). Vercel: truss-home-s-projects/personal-site.
 
-No git repo for personal-site. The folder is untracked inside the home repo at C:\Users\ltara. Git init is a prerequisite for Step 8.
+The hero shows the WebGL shader, entity resoLOUtion wordmark, and four dock buttons (Projects, Data, Book, Find Me). Clicking Projects or Data opens a 3D rotating circular gallery. Clicking Book opens the glass booking calendar. Find Me links to LinkedIn.
 
-No .env.local. CAL_COM_API_KEY must be set for the booking calendar API routes to work.
+Cal.com booking is fully functional on production. The API routes use Cal.com v2 (v1 was decommissioned). Slots and bookings both verified working. 11 slots returning for available days.
 
-SECURITY. The Cal.com API key cal_live_9f6cedd78486a164751772aa7b43be19 was shared in plaintext in the session chat. Lou must revoke it immediately at cal.com/settings/developer/api-keys and generate a new one before doing anything else.
-
----
-
-## Files in flight (active files being modified)
-
-- site-standup.md. This file.
-- SESSION-HANDOFF.md. Updated this session.
-- app/globals.css. Tokens and animations.
-- app/(site)/page.tsx. The home page, now a client component managing the glass calendar toggle state.
-- app/(site)/layout.tsx. Stripped to a bare main wrapper, no Nav or Footer.
-- app/layout.tsx. Added suppressHydrationWarning to fix browser extension hydration mismatch.
-- app/api/cal/slots/route.ts. New. Proxies Cal.com slot availability server-side.
-- app/api/cal/book/route.ts. New. Proxies Cal.com booking creation server-side.
-- components/ShaderAnimation.tsx. New. three.js WebGL hero background.
-- components/GlowLink.tsx. New. Shared glow-pill visual for all CTA buttons.
-- components/CTAButton.tsx. Refactored to use GlowLink.
-- components/HeroButtonRow.tsx. New. Dock magnification row with three glow buttons.
-- components/GlassBookingCalendar.tsx. New. Full on-page booking flow.
-- lib/site.ts. Added site.linkedin and site.calEvent.
+Gallery cards are placeholder content. No hrefs set yet. Real content to be added when Lou is ready.
 
 ---
 
-## What changed (touched this session, June 2 2026)
+## What changed this session (June 1 2026)
 
-Hero animation. ResolveAnim was debugged. Several issues fixed: font-load re-measure, vertical clipping, touch scroll fighting, pointercancel reset, orientationchange listener. Then the scatter was reworked to fill the full hero with a circular distribution, dot count raised to 360 desktop and 150 mobile, stagger made continuous by radius. A rotating spiral collapse was added. Cursor follow replaced click-and-drag. Then the whole component was replaced with ShaderAnimation using three.js because Lou wanted a different visual direction entirely.
+Cal.com v1 to v2 migration.
+Both API routes (slots, book) were broken because Cal.com decommissioned their v1 API. Migrated to v2: Bearer auth header instead of query param, updated endpoint paths, updated response parsing. The slots response has the date map directly in data.data (not nested under data.data.slots as originally assumed). Fixed.
 
-ShaderAnimation. three.js WebGL renderer, a PlaneGeometry covering the viewport, a fragment shader that draws layered line rings. Retinted to brand: ink background, lines blending cyan-motion to signal, no other hues. Honors reduced motion by rendering one static frame and skipping the rAF loop. Cleans up renderer, geometry, and material on unmount.
+CircularGallery component.
+Built components/ui/circular-gallery.tsx. A 3D ring carousel with perspective 2000px. Cards are 260x360px, aspect 3/4. Interaction: drag to spin, mouse wheel to spin, auto-rotate when idle (pauses on interaction, resumes 800ms after). Clicking a card navigates to its href. Radius and autoRotateSpeed are props.
 
-Nav and footer removed. Both were stripped from app/(site)/layout.tsx. Nav.tsx and Footer.tsx files remain on disk. The home page, about, and work pages have no chrome at all. This was a deliberate product call.
+Hero panel system.
+Replaced the single bookOpen boolean with a panel state (none/book/projects/data). Four buttons now. Projects and Data each open their own CircularGallery. Book opens GlassBookingCalendar. Buttons are mutually exclusive. AnimatePresence with motion.div layout handles smooth height transitions.
 
-CTA button redesign. GlowLink.tsx built as the shared visual source. CTAButton delegates to GlowLink and keeps the cal link and analytics. Glow is a signal-to-cyan-motion gradient, blurs on hover. ArrowUpRight icon from lucide-react on every button. Default label changed to Book.
+Transition fix.
+The snap-and-pause on panel close was caused by two things: AnimatePresence mode=wait holding the layout open during the spring exit, and GlassBookingCalendar's own inner exit animation propagating through the tree and extending the hold. Fixed by splitting enter/exit transitions (spring enter, 150ms easeOut exit), wrapping AnimatePresence in a motion.div layout, dropping mode=wait, and removing the inner exit animation from GlassBookingCalendar's root element.
 
-Hero button row. HeroButtonRow.tsx. Motion-based dock row, mouse proximity drives a scale spring (1 to 1.08, damping 12). Three buttons: Projects to /work, Book toggles the glass calendar, Find Me to LinkedIn. Horizontal gap set to gap-8.
+Data gallery.
+Six PDL use case cards added as the Data panel: Fan Enrichment, Lead Intelligence, Talent Mapping, Market Sizing, ICP Builder, Network Graph. No hrefs yet. Will link to blog posts.
 
-Glass booking calendar. GlassBookingCalendar.tsx. Persistent glass card (ink/50, backdrop-blur-2xl, border white/10) with two columns. Left column stays mounted throughout: monthly grid, day of week headers, past dates disabled, today dot in signal, selected day lit in signal glow. Right column slides in (spring, 460px) when a date is clicked, then AnimatePresence swaps between three inner panels: time slot grid, booking form, success state. Shimmer covers the right panel during data load so the glass background never goes blank. All Cal.com calls go through the two server-side API routes.
+Pre-deploy audit.
+- HeroProjectCards.tsx deleted (unused, had TypeScript type error on transition prop)
+- focus-rail.tsx transition type fixed (per-property object instead of function)
+- /about, /work, /work/[slug], /book all return notFound() — files kept for future
+- Sitemap trimmed to / only
+- .gitignore created
 
-Cal.com API routes. app/api/cal/slots/route.ts fetches the 30min event type ID from Cal.com (module-level cache), then fetches available slots. Returns the slot array plus the event type ID. app/api/cal/book/route.ts POSTs a booking with name, email, notes, timezone, start, and auto-computed end. Both read CAL_COM_API_KEY from env. Neither file has any key hardcoded.
-
-Cal.com MCP. claude mcp add --transport http cal https://mcp.cal.com/mcp --scope user was run. The server is registered globally in Claude Code. It needs OAuth to connect. OAuth is at https://cal.com/integrate. This is separate from the REST API key used by the production routes.
-
-Security incident. The REST API key was shared in plaintext in chat. Treat it as compromised. Revoke at cal.com/settings/developer/api-keys. Generate a new one. Add to .env.local.
-
-Hydration warning fixed. suppressHydrationWarning added to the html element in app/layout.tsx. A browser extension was injecting data-theme and CSS variables before React hydrated, causing a mismatch.
-
-New dependencies. three, @types/three (WebGL shader), lucide-react (icons), date-fns (calendar date math). All installed with npm install --force due to platform binary lock in the lockfile.
-
----
-
-## Failed attempts (what did not work and why)
-
-- mcpServers in settings.json. Claude Code's settings.json does not accept a mcpServers key. MCP server definitions go in .mcp.json files or via claude mcp add. The validator rejected the edit.
-- .mcp.json approach for Cal.com MCP. Created a .mcp.json at the project root. The server showed as Pending approval, then when approved via enabledMcpjsonServers, it showed Failed to connect because .mcp.json has no way to carry auth headers. Removed. Replaced with claude mcp add which stores auth internally.
-- cal_live API key shared in chat. Shared in plaintext. Key is compromised. Must be revoked.
-
----
-
-## Next step (the single next thing to try)
-
-Before Step 8: revoke the compromised Cal.com key, generate a new one, add it to .env.local, then init the personal-site git repo.
-
-After that: Step 8 from prompts.md. Deploy on Vercel, point www.entityresoloution.com, confirm SSL, confirm the book_a_call event records in the deployed environment. The Cal.com API routes will only work once CAL_COM_API_KEY is set in the Vercel environment variables.
+Git setup and deploy.
+- git init, branch main, initial commit
+- Pushed to github.com/trusshome/personal-site
+- Rewritten history: all commits use hello@trusshomeco.com / trusshome (force-pushed)
+- vercel.json added with framework: nextjs (pre-existing Vercel project had no framework set, caused output directory error)
+- CAL_COM_API_KEY added to Vercel — first two attempts corrupted by PowerShell pipe BOM. Fixed using cmd stdin redirect with raw ASCII bytes.
+- Namecheap DNS: A record @ to 76.76.21.21, CNAME www to cname.vercel-dns.com
+- www.entityresoloution.com: 200. Apex: propagating.
+- Production smoke test: 11 slots returned, eventTypeId 5863479.
 
 ---
 
-## Build rules to honor
+## Files in flight
 
-- Per the project instructions, build any website UI with the ui-ux-pro-max connector and the 21st.dev connector.
-- Get permission to feature ESP since it is a client and a friend's firm.
-- Keep any sensitive PDL data off the public site.
-- Match the writing system instructions. Active voice, direct, simple words, no dashes, no marketing fluff.
+None. Session is complete and all files are committed and deployed.
 
 ---
 
-## Lead funnel (the core workflow)
+## Failed attempts this session
 
-LinkedIn profile or post, then land on the site, then click Book in the hero, pick a date on the glass calendar, pick a time, fill in name and email, confirm the booking. Discovery call is booked on the same page. Analytics fires book_a_call at the moment of date selection.
+PowerShell pipe BOM corruption. Piping a string to vercel env add in PowerShell adds a BOM character (0xFEFF) to the start of the value regardless of Console.OutputEncoding settings. This appeared as a Bytestring error in the Cal.com fetch (character at index 7 of the Authorization header value is > 255). Fixed by writing raw ASCII bytes to a temp file and using cmd stdin redirect. See Gotchas in SESSION-HANDOFF.md.
+
+vercel --prod output directory error. The pre-existing personal-site Vercel project had no framework configured. It was looking for a public/ directory. Fixed by adding vercel.json with framework: nextjs.
+
+---
+
+## Next step
+
+Add real project content to gallery cards. Replace placeholder titles, subtitles, and Unsplash images in galleryItems inside app/(site)/page.tsx. Add href to each card pointing to the case study or external URL.
+
+After that: build blog at /blog/[slug] and wire dataItems hrefs. Then restore /about and /work when content is ready.
 
 ---
 
 ## Decisions locked
 
-- Domain. www.entityresoloution.com, purchased on Namecheap on May 31 2026.
+- Domain. www.entityresoloution.com, Namecheap. DNS pointed at Vercel.
 - Stack. Next.js 16.2.6, React 19.2.4, Tailwind v4, motion, three.js, date-fns, lucide-react. Locked.
-- Booking tool. Cal.com, account set up May 31 2026, username entity-resoloution. Event type 30min.
-- LinkedIn. https://www.linkedin.com/in/entity-resoloution/ stored in lib/site.ts as site.linkedin.
-- Hero visual. WebGL shader, three.js, ink base with signal and cyan-motion lines. No dots animation.
-- Booking surface. On-page glass calendar, no Cal.com iframe or redirect.
+- Booking. Cal.com entity-resoloution, 30min event type. On-page glass calendar. No embed or redirect.
+- Cal.com API version. v2. v1 is decommissioned.
+- LinkedIn. https://www.linkedin.com/in/entity-resoloution/ in lib/site.ts.
+- Hero visual. WebGL shader, three.js, ink base with signal and cyan-motion lines.
+- Panel system. Projects / Data / Book are mutually exclusive panels. Find Me is always an external link.
+- Gallery. CircularGallery with radius 360, autoRotateSpeed 0.04, drag and wheel interaction.
+- Deployment. Vercel, truss-home-s-projects team, personal-site project.
+- GitHub. trusshome/personal-site, private, main branch, hello@trusshomeco.com author.
 
 ## Decisions still open
 
-- Public scope. Which PDL and client detail can show publicly, and at what level.
-- ESP feature permission. ESP is a client and a friend's firm, so get a yes before featuring it.
-- Cal.com OAuth for MCP. The MCP server is registered but not yet authorized. OAuth flow needed at https://cal.com/integrate.
-- Smooth scroll. lenis is installed and globals.css has the helper rules but no provider is wired.
+- Real project images and copy for gallery cards.
+- Blog structure and slug conventions for Data card links.
+- ESP feature permission. Written yes required before the case study publishes.
+- About page copy and timeline for going live.
+- Apex domain (entityresoloution.com without www). DNS propagation in progress.
+- book_a_call analytics event. Needs Vercel Analytics dashboard verification once traffic arrives.

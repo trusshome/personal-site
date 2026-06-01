@@ -1,11 +1,8 @@
 # Claude Code Prompts. Entity resoLOUtion
 
-Copy one block at a time into Claude Code in Cursor. Run them in order.
-Each prompt is self contained, carries the shared rules, and stops at the
-end of its step so you can review before the next one. Read with
-build-plan.md and CLAUDE.md.
+Status. Site is live at www.entityresoloution.com. Steps 1 through 8 done. All docs updated June 1 2026.
 
-Status. Steps 1 to 7 done. Hero redesigned (shader, glow buttons, glass calendar). Git setup and Step 8 are next.
+Read with build-plan.md and CLAUDE.md.
 
 ---
 
@@ -16,85 +13,125 @@ Status. Steps 1 to 7 done. Hero redesigned (shader, glow buttons, glass calendar
 - Document while context is fresh. Review as an attacker before commit.
 - Reference tokens from CLAUDE.md, never raw hex. One accent, signal.
 - Active voice, simple words, no dashes.
-- Use the ui-ux-pro-max and 21st.dev connectors for the UI.
-- ESP stays an unpublished draft until I confirm written permission.
+- ESP stays an unpublished draft until Lou confirms written permission.
 - All PDL data stays fabricated and labeled. Nothing sensitive ships.
+- npm install always needs --force on this machine.
+- Never pipe env var values through PowerShell — use the cmd stdin redirect method in SESSION-HANDOFF.md Gotchas.
 
 ---
 
-## Steps 1 through 7 (done)
+## Steps 1 through 8 (done)
 
-All complete. See SESSION-HANDOFF.md for detail.
+All complete. Site is live. See SESSION-HANDOFF.md for full detail.
 
 ---
 
-## Git setup (prerequisite for Step 8, not yet done)
+## Resume prompt (use this to cold-start a new session)
 
 ```
-You are resuming the Entity resoLOUtion personal site build.
+You are resuming the Entity resoLOUtion personal site build in a fresh
+session with no prior chat history. The working folder is
+007 - TrussHomeCo / 002 - ClaudeCode / personal-site.
 
-Read SESSION-HANDOFF.md, CLAUDE.md, build-plan.md, and prompts.md in that
-order and treat them as the source of truth.
+Read these files in order and treat them as the source of truth:
+- SESSION-HANDOFF.md   cold start brief, read this first
+- CLAUDE.md            brand tokens, stack, folder conventions, build rules
+- build-plan.md        the build sequence and definition of done
+- prompts.md           this file, copy-paste prompts per step
 
-SECURITY FIRST. Before touching any code or git, confirm that Lou has:
-1. Revoked the compromised Cal.com API key at cal.com/settings/developer/api-keys.
-2. Generated a new key and added it to personal-site/.env.local as CAL_COM_API_KEY.
-If either step is missing, stop and say so. Do not proceed.
+Then scan app, components, content, lib, and app/api so your understanding
+matches what is on disk.
 
-Then do git setup only. Do not change application code or start Step 8.
+Confirm the ui-ux-pro-max and 21st.dev connectors are available before any
+UI work. If either is missing, stop and tell me.
 
-Context: personal-site has no git repo of its own. The folder sits as an
-untracked directory inside the home repo at C:\Users\ltara. Do NOT run any
-git add, commit, or push at the home level. Work only inside personal-site.
+State of play. Steps 1 through 8 complete. Site is live at
+www.entityresoloution.com. GitHub at trusshome/personal-site (private).
+Vercel project personal-site under truss-home-s-projects.
 
-Follow the project rules. Plan first, show the plan, wait for my go.
-Verify each step. Review as an attacker before the commit. No dashes.
+Current live page: hero only. All other routes return 404.
+Hero has: WebGL shader, wordmark, four dock buttons (Projects, Data, Book,
+Find Me). Projects and Data open CircularGallery panels with placeholder
+cards. Book opens the glass booking calendar (Cal.com v2, fully working on
+production). Find Me links to LinkedIn.
+
+Cal.com API key is stored in .env.local locally and in Vercel production.
+Do NOT re-add it via PowerShell pipe — see SESSION-HANDOFF.md Gotchas.
+
+Do not start work yet. Confirm you have read the handoff and the docs,
+give me a short summary of the current state in your own words, and state
+what the next step is. Then wait for my go.
+```
+
+---
+
+## Step 9. Add real project content to gallery
+
+```
+Continue the Entity resoLOUtion build. Site is live at
+www.entityresoloution.com. Re-read CLAUDE.md and SESSION-HANDOFF.md.
+
+Rules: plan first and wait for my go. Active voice, no dashes.
+
+The Projects panel on the hero (app/(site)/page.tsx) shows a CircularGallery
+with placeholder cards in the galleryItems array. Replace the placeholder
+content with real project data:
+
+For each card: real title, subtitle (client · year), label (role), a real
+photo URL (screenshot, project image, or a descriptive Unsplash photo), and
+href pointing to the project page or external URL.
+
+Do not link to /work/[slug] unless that page has been restored from
+notFound(). Use an external URL or omit href if no destination exists yet.
+
+Show me the planned card data before touching any file. Wait for my go.
+```
+
+---
+
+## Step 10. Blog and data use cases
+
+```
+Continue the Entity resoLOUtion build. Site is live. Re-read CLAUDE.md
+and SESSION-HANDOFF.md.
+
+Rules: plan first and wait for my go. Active voice, no dashes.
+
+The Data panel on the hero shows 6 PDL use case cards in dataItems. Each
+card needs an href pointing to a blog post at /blog/[slug].
 
 Do this in order:
-1. Confirm git rev-parse --show-toplevel still points to C:\Users\ltara.
-2. Run git init inside personal-site, set default branch to main.
-3. Create .gitignore covering: node_modules, .next, .vercel, out, build,
-   .env and .env.*, *.log, .DS_Store, next-env.d.ts, *.tsbuildinfo.
-4. Secret scan. List every file that would be committed. If any .env file,
-   API key, token, or secret appears, stop and tell me. Do not commit.
-5. Commit. Stage source only. Message: Initial commit, Entity resoLOUtion
-   site through Step 7 plus hero redesign and glass booking calendar.
-6. Create a private GitHub repo named personal-site under the trusshome
-   account using gh, then add it as origin.
-7. Push main to origin and set upstream.
-8. Verify. Confirm the push succeeded, branch tracks origin/main, and the
-   remote does not contain node_modules, .next, or any .env file.
+1. Scaffold app/(site)/blog/[slug]/page.tsx with generateStaticParams and
+   a content source in content/blog.ts (same pattern as content/work.ts).
+2. Add metadata, canonical URL, and sitemap entry for blog posts.
+3. Add href to each dataItem in app/(site)/page.tsx pointing to the correct
+   slug once posts exist.
+4. Make sure the blog index (if any) returns notFound() until there are
+   enough posts to publish.
 
-Stop after the push is verified. Do not start Step 8.
+All PDL data in posts stays fabricated and labeled. No real customer or
+fan data. Show me the plan and wait for my go.
 ```
 
 ---
 
-## Step 8. Deploy and connect the domain
+## Step 11. Restore about and work pages
 
 ```
-Continue the Entity resoLOUtion build. Git setup is verified and pushed.
-Re-read CLAUDE.md and SESSION-HANDOFF.md.
+Continue the Entity resoLOUtion build. Site is live. Re-read CLAUDE.md
+and SESSION-HANDOFF.md.
 
-Rules: plan first and wait for my go, verify each action, document,
-review as an attacker. Active voice, no dashes.
+Rules: plan first and wait for my go. Active voice, no dashes.
 
-Before deploying, confirm:
-- personal-site/.env.local exists with CAL_COM_API_KEY set to a live key.
-- The old key cal_live_9f6cedd78486a164751772aa7b43be19 has been revoked.
+/about and /work currently return notFound(). Restore them:
+1. Retrieve the previous page implementations from git history.
+2. Remove the notFound() guard from each.
+3. Re-add canonical, description, and OG metadata.
+4. Update the sitemap to include / and /about and /work.
+5. Restore the work index FocusRail with real case studies only.
 
-Do only Step 8 from build-plan.md, deploy and domain:
-- Deploy on Vercel. Set CAL_COM_API_KEY as a Vercel environment variable
-  before the first production build so the glass booking calendar routes
-  work at runtime.
-- Point www.entityresoloution.com at the Vercel project.
-- Confirm SSL settles and the live site loads on both the apex and www.
+ESP case study (/work/esp-development): only publish if Lou confirms
+written permission in this session. Until then keep status: draft.
 
-After it is live:
-- Confirm the book_a_call event records in the deployed environment.
-- Confirm the glass calendar fetches real Cal.com slots on the live domain.
-- Update CLAUDE.md and the definition of done in build-plan.md.
-
-Show me your Step 8 plan and wait for my go. Stop when the site is live
-and verified.
+Show me the plan and wait for my go.
 ```

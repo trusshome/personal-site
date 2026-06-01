@@ -15,7 +15,7 @@ type GlowLinkProps = {
 // Shared visual for every glow button. CTAButton wraps this with the cal link
 // and analytics, the hero uses it directly for Projects and Find Me.
 const base =
-  'group relative inline-flex h-11 items-center overflow-hidden rounded-[9999px] bg-ink px-5 text-sm font-medium text-white transition-all duration-200 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-signal';
+  'group relative inline-flex h-11 items-center overflow-hidden rounded-[9999px] bg-ink px-5 text-sm font-medium text-white transition-all duration-200 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-signal [transform:translateZ(0)]';
 
 function GlowContent({ children }: { children: React.ReactNode }) {
   return (

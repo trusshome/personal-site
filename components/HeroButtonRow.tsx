@@ -13,7 +13,7 @@ import GlowLink from '@/components/GlowLink';
 import { site } from '@/lib/site';
 
 const GLOW_CLS =
-  'group relative inline-flex h-10 sm:h-11 w-full items-center justify-center overflow-hidden rounded-[9999px] bg-ink px-4 sm:px-6 py-2.5 sm:py-3 text-sm sm:text-base font-medium text-white transition-all duration-200 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-signal';
+  'group relative inline-flex h-10 sm:h-11 w-full items-center justify-center overflow-hidden rounded-[9999px] bg-ink px-4 sm:px-6 py-2.5 sm:py-3 text-sm sm:text-base font-medium text-white transition-all duration-200 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-signal [transform:translateZ(0)]';
 
 function GlowGradient() {
   return (

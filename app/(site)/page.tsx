@@ -139,12 +139,21 @@ export default function HomePage() {
             paddingBottom: 'env(safe-area-inset-bottom)',
           }}
         >
-        {/* z-index 0: positioned above body background so iOS reads the shader
-            colour when determining the glass chrome effect behind the bars */}
-        <div className="fixed inset-0" style={{ zIndex: 0 }}>
+        {/* 100lvh = large viewport height = full screen with iOS bars retracted.
+            inset:0 would only fill the dynamic viewport (the gap between the bars),
+            so the shader must use lvh to physically paint behind the status bar
+            and the Safari bottom toolbar. */}
+        <div
+          className="fixed left-0 top-0"
+          style={{ zIndex: 0, width: '100vw', height: '100lvh' }}
+        >
           <ShaderAnimation className="h-full w-full" />
         </div>
-        <div className="fixed inset-0" style={{ zIndex: 0, backgroundColor: 'rgba(20,23,28,0.3)' }} aria-hidden />
+        <div
+          className="fixed left-0 top-0"
+          style={{ zIndex: 0, width: '100vw', height: '100lvh', backgroundColor: 'rgba(20,23,28,0.3)' }}
+          aria-hidden
+        />
 
         <div className="relative z-10 flex flex-col items-center gap-0 w-full">
           <h1 className="font-display text-[1.75rem] font-medium tracking-tight sm:text-5xl lg:text-7xl whitespace-nowrap">

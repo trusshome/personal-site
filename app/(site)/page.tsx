@@ -126,7 +126,16 @@ const PANEL_ANIM = {
 
 export default function HomePage() {
   const [panel, setPanel] = useState<Panel>('none');
+  const [isMobile, setIsMobile] = useState(false);
   const toggle = (p: Panel) => setPanel((cur) => (cur === p ? 'none' : p));
+
+  useEffect(() => {
+    const mq = matchMedia('(max-width: 640px)');
+    setIsMobile(mq.matches);
+    const handler = (e: MediaQueryListEvent) => setIsMobile(e.matches);
+    mq.addEventListener('change', handler);
+    return () => mq.removeEventListener('change', handler);
+  }, []);
 
   // iOS 26 Liquid Glass: scroll into the runway once so Safari composites real
   // in-flow shader pixels behind its chrome, then block document scroll gestures
@@ -225,12 +234,13 @@ export default function HomePage() {
                 <motion.div
                   key="projects"
                   {...PANEL_ANIM}
-                  className="mt-6 w-full"
-                  style={{ height: 500 }}
+                  className="mt-6 w-full h-[260px] sm:h-[500px]"
                 >
                   <CircularGallery
                     items={galleryItems}
-                    radius={360}
+                    radius={isMobile ? 180 : 360}
+                    cardWidth={isMobile ? 130 : 260}
+                    cardHeight={isMobile ? 180 : 360}
                     autoRotateSpeed={0.04}
                     className="w-full h-full"
                   />
@@ -240,12 +250,13 @@ export default function HomePage() {
                 <motion.div
                   key="data"
                   {...PANEL_ANIM}
-                  className="mt-6 w-full"
-                  style={{ height: 500 }}
+                  className="mt-6 w-full h-[260px] sm:h-[500px]"
                 >
                   <CircularGallery
                     items={dataItems}
-                    radius={360}
+                    radius={isMobile ? 180 : 360}
+                    cardWidth={isMobile ? 130 : 260}
+                    cardHeight={isMobile ? 180 : 360}
                     autoRotateSpeed={0.04}
                     className="w-full h-full"
                   />

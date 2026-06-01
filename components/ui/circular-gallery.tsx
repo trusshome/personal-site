@@ -19,18 +19,22 @@ interface CircularGalleryProps extends HTMLAttributes<HTMLDivElement> {
   items: GalleryItem[];
   radius?: number;
   autoRotateSpeed?: number;
+  cardWidth?: number;
+  cardHeight?: number;
 }
 
 const CircularGallery = React.forwardRef<HTMLDivElement, CircularGalleryProps>(
-  ({ items, className, radius = 480, autoRotateSpeed = 0.03, ...props }, ref) => {
+  ({ items, className, radius = 480, autoRotateSpeed = 0.03, cardWidth = 260, cardHeight = 360, ...props }, ref) => {
     const [rotation, setRotation] = useState(0);
     const isInteracting = useRef(false);
     const interactTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
     const animationFrameRef = useRef<number | null>(null);
     const lastPointerX = useRef(0);
+    const lastTouchX = useRef(0);
     const isDragging = useRef(false);
+    const touchMoved = useRef(false);
+    const internalRef = useRef<HTMLDivElement | null>(null);
 
-    // Auto-rotate when not interacting
     useEffect(() => {
       const tick = () => {
         if (!isInteracting.current) {
@@ -56,7 +60,50 @@ const CircularGallery = React.forwardRef<HTMLDivElement, CircularGalleryProps>(
       }, delayMs);
     }, []);
 
-    // Wheel — spin the ring in place
+    // Touch drag — non-passive so we can call stopPropagation + preventDefault.
+    // stopPropagation prevents the document-level scroll-lock in page.tsx from
+    // seeing these events. preventDefault prevents native pan. Once preventDefault
+    // is called, iOS does not synthesize pointer events from the same gesture,
+    // so the pointer handlers below remain mouse/stylus only.
+    useEffect(() => {
+      const el = internalRef.current;
+      if (!el) return;
+
+      const onTouchStart = (e: TouchEvent) => {
+        isDragging.current = true;
+        touchMoved.current = false;
+        lastTouchX.current = e.touches[0].clientX;
+        pauseAutoRotate();
+      };
+
+      const onTouchMove = (e: TouchEvent) => {
+        e.stopPropagation();
+        e.preventDefault();
+        if (!isDragging.current || e.touches.length === 0) return;
+        const dx = e.touches[0].clientX - lastTouchX.current;
+        if (Math.abs(dx) > 3) touchMoved.current = true;
+        setRotation((prev) => prev - dx * 0.4);
+        lastTouchX.current = e.touches[0].clientX;
+      };
+
+      const onTouchEnd = () => {
+        isDragging.current = false;
+        resumeAutoRotate();
+      };
+
+      el.addEventListener('touchstart', onTouchStart, { passive: true });
+      el.addEventListener('touchmove', onTouchMove, { passive: false });
+      el.addEventListener('touchend', onTouchEnd);
+      el.addEventListener('touchcancel', onTouchEnd);
+
+      return () => {
+        el.removeEventListener('touchstart', onTouchStart);
+        el.removeEventListener('touchmove', onTouchMove);
+        el.removeEventListener('touchend', onTouchEnd);
+        el.removeEventListener('touchcancel', onTouchEnd);
+      };
+    }, [pauseAutoRotate, resumeAutoRotate]);
+
     const onWheel = useCallback(
       (e: React.WheelEvent) => {
         e.preventDefault();
@@ -67,9 +114,10 @@ const CircularGallery = React.forwardRef<HTMLDivElement, CircularGalleryProps>(
       [pauseAutoRotate, resumeAutoRotate],
     );
 
-    // Pointer drag
+    // Pointer handlers handle mouse/stylus only; touch is covered above.
     const onPointerDown = useCallback(
       (e: React.PointerEvent<HTMLDivElement>) => {
+        if (e.pointerType === 'touch') return;
         isDragging.current = true;
         lastPointerX.current = e.clientX;
         pauseAutoRotate();
@@ -79,23 +127,33 @@ const CircularGallery = React.forwardRef<HTMLDivElement, CircularGalleryProps>(
     );
 
     const onPointerMove = useCallback((e: React.PointerEvent) => {
-      if (!isDragging.current) return;
+      if (e.pointerType === 'touch' || !isDragging.current) return;
       const dx = e.clientX - lastPointerX.current;
       setRotation((prev) => prev - dx * 0.4);
       lastPointerX.current = e.clientX;
     }, []);
 
-    const onPointerUp = useCallback(() => {
-      if (!isDragging.current) return;
-      isDragging.current = false;
-      resumeAutoRotate();
-    }, [resumeAutoRotate]);
+    const onPointerUp = useCallback(
+      (e: React.PointerEvent) => {
+        if (e.pointerType === 'touch' || !isDragging.current) return;
+        isDragging.current = false;
+        resumeAutoRotate();
+      },
+      [resumeAutoRotate],
+    );
 
     const anglePerItem = 360 / items.length;
+    const halfW = cardWidth / 2;
+    const halfH = cardHeight / 2;
+    const isSmall = cardWidth < 200;
 
     return (
       <div
-        ref={ref}
+        ref={(node) => {
+          internalRef.current = node;
+          if (typeof ref === 'function') ref(node);
+          else if (ref) (ref as React.MutableRefObject<HTMLDivElement | null>).current = node;
+        }}
         role="region"
         aria-label="Project gallery"
         className={cn(
@@ -130,13 +188,15 @@ const CircularGallery = React.forwardRef<HTMLDivElement, CircularGalleryProps>(
                 key={`${item.photo.url}-${i}`}
                 role="group"
                 aria-label={item.title}
-                className="absolute w-[260px] h-[360px]"
                 style={{
+                  position: 'absolute',
+                  width: `${cardWidth}px`,
+                  height: `${cardHeight}px`,
                   transform: `rotateY(${itemAngle}deg) translateZ(${radius}px)`,
                   left: '50%',
                   top: '50%',
-                  marginLeft: '-130px',
-                  marginTop: '-180px',
+                  marginLeft: `-${halfW}px`,
+                  marginTop: `-${halfH}px`,
                   opacity,
                   transition: 'opacity 0.3s linear',
                 }}
@@ -147,8 +207,8 @@ const CircularGallery = React.forwardRef<HTMLDivElement, CircularGalleryProps>(
                   draggable={false}
                   className="block relative w-full h-full rounded-2xl shadow-2xl overflow-hidden border border-white/15 bg-ink/60 backdrop-blur-lg group focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-signal"
                   onClick={(e) => {
-                    // Prevent navigation if user was dragging
-                    if (isDragging.current || !item.href) e.preventDefault();
+                    if (touchMoved.current || isDragging.current || !item.href) e.preventDefault();
+                    touchMoved.current = false;
                   }}
                 >
                   {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -160,14 +220,18 @@ const CircularGallery = React.forwardRef<HTMLDivElement, CircularGalleryProps>(
                     style={{ objectPosition: item.photo.pos ?? 'center' }}
                   />
                   <div className="absolute inset-0 bg-gradient-to-b from-transparent via-transparent to-ink/85 pointer-events-none" />
-                  <div className="absolute bottom-0 inset-x-0 p-4 text-white">
+                  <div className={cn('absolute bottom-0 inset-x-0 text-white', isSmall ? 'p-2' : 'p-4')}>
                     {item.label && (
-                      <p className="font-mono text-[10px] uppercase tracking-[0.18em] text-signal mb-1">
+                      <p className={cn('font-mono uppercase tracking-[0.18em] text-signal', isSmall ? 'text-[8px] mb-0.5' : 'text-[10px] mb-1')}>
                         {item.label}
                       </p>
                     )}
-                    <h2 className="font-display text-base font-semibold leading-snug">{item.title}</h2>
-                    <p className="text-xs text-white/45 mt-0.5 italic">{item.subtitle}</p>
+                    <h2 className={cn('font-display font-semibold leading-snug', isSmall ? 'text-xs' : 'text-base')}>
+                      {item.title}
+                    </h2>
+                    <p className={cn('italic text-white/45', isSmall ? 'text-[9px] mt-0' : 'text-xs mt-0.5')}>
+                      {item.subtitle}
+                    </p>
                   </div>
                 </a>
               </div>

@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import Wordmark from '@/components/Wordmark';
 import HeroButtonRow from '@/components/HeroButtonRow';
@@ -124,37 +124,50 @@ const PANEL_ANIM = {
   exit:    { opacity: 0, y: -6,  scale: 0.98, transition: PANEL_EXIT },
 };
 
+// iOS 26 Safari Liquid Glass: at scrollY 0 Safari samples the root CSS
+// background-color behind its chrome, not the visible media. We give the
+// document a small scroll runway and scroll into it on load so Safari has
+// non-zero scroll and composites the real shader pixels behind the bars.
+const RUNWAY = 120;
+
 export default function HomePage() {
   const [panel, setPanel] = useState<Panel>('none');
   const toggle = (p: Panel) => setPanel((cur) => (cur === p ? 'none' : p));
 
+  useEffect(() => {
+    window.scrollTo(0, RUNWAY);
+  }, []);
+
   return (
     <>
-      <section
-          className="relative isolate flex flex-col items-center justify-center px-4 sm:px-6 text-center"
-          style={{
-            minHeight: '100vh',
-            height: '100dvh',
-            paddingTop: 'env(safe-area-inset-top)',
-            paddingBottom: 'env(safe-area-inset-bottom)',
-          }}
-        >
-        {/* On iOS Safari, 100vh equals the LARGE viewport (full screen, behind
-            both bars) and is universally supported, unlike lvh which collapses
-            to height 0 on older iOS. This is what makes the shader bleed behind
-            the status bar and the Safari bottom toolbar. */}
-        <div
-          className="fixed left-0 top-0"
-          style={{ zIndex: 0, width: '100vw', height: '100vh' }}
-        >
+      {/* MEDIA LAYER. The fixed wrapper carries no background-color or
+          backdrop-filter itself (iOS 26 would tint the toolbar). The shader
+          and tint sit on absolute children, and the shader bleeds above and
+          below the visual viewport so Safari's chrome sees real content. */}
+      <div
+        aria-hidden
+        style={{ position: 'fixed', top: 0, left: 0, width: '100vw', height: '100vh', zIndex: 0 }}
+      >
+        <div style={{ position: 'absolute', top: '-15vh', left: 0, width: '100%', height: '130vh' }}>
           <ShaderAnimation className="h-full w-full" />
         </div>
-        <div
-          className="fixed left-0 top-0"
-          style={{ zIndex: 0, width: '100vw', height: '100vh', backgroundColor: 'rgba(20,23,28,0.3)' }}
-          aria-hidden
-        />
+        <div style={{ position: 'absolute', inset: 0, backgroundColor: 'rgba(20,23,28,0.3)' }} />
+      </div>
 
+      {/* Top runway. An explicit spacer (not margin, which would collapse) so the
+          document scrolls above the hero and Safari composites the shader behind
+          the status bar. Scrolled out of view on load. */}
+      <div aria-hidden style={{ height: RUNWAY }} />
+
+      <section
+          className="relative flex flex-col items-center justify-center px-4 sm:px-6 text-center"
+          style={{
+            minHeight: '100dvh',
+            zIndex: 1,
+            paddingTop: 'env(safe-area-inset-top)',
+            paddingBottom: 'calc(env(safe-area-inset-bottom) + 16px)',
+          }}
+        >
         <div className="relative z-10 flex flex-col items-center gap-0 w-full">
           <h1 className="font-display text-[1.75rem] font-medium tracking-tight sm:text-5xl lg:text-7xl whitespace-nowrap">
             <Wordmark dark />
@@ -218,6 +231,10 @@ export default function HomePage() {
           </motion.div>
         </div>
       </section>
+
+      {/* Bottom runway. Keeps the document scrollable past the visual viewport
+          so Safari composites the shader behind the bottom toolbar too. */}
+      <div aria-hidden style={{ height: RUNWAY }} />
     </>
   );
 }

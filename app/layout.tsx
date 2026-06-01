@@ -67,7 +67,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html
       lang="en"
-      className={`${spaceGrotesk.variable} ${inter.variable} ${jetbrainsMono.variable}`}
+      className={`${spaceGrotesk.variable} ${inter.variable} ${jetbrainsMono.variable} bg-ink`}
       // A browser extension injects data-theme and theme CSS vars onto <html>
       // before hydration. Suppress the resulting attribute diff on this element
       // only; it does not hide mismatches in our own markup.

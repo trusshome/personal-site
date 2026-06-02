@@ -131,10 +131,26 @@ export default function HomePage() {
       e.preventDefault();
     };
 
+    // When the virtual keyboard appears the visual viewport shrinks. Calling
+    // scrollIntoView on the focused input asks the nearest scrollable ancestor
+    // (the calendar wrapper) to bring it into view — keeping it above the keyboard
+    // without moving the document. The window scroll listener above restores
+    // scrollY if scrollIntoView briefly touches the document.
+    const onViewportResize = () => {
+      const el = document.activeElement as HTMLElement | null;
+      if (el?.tagName === 'INPUT' || el?.tagName === 'TEXTAREA') {
+        requestAnimationFrame(() =>
+          el.scrollIntoView({ block: 'nearest', behavior: 'smooth' }),
+        );
+      }
+    };
+    window.visualViewport?.addEventListener('resize', onViewportResize);
+
     document.addEventListener('touchmove', onTouchMove, { passive: false });
     return () => {
       document.removeEventListener('touchmove', onTouchMove);
       window.removeEventListener('scroll', onScroll);
+      window.visualViewport?.removeEventListener('resize', onViewportResize);
     };
   }, []);
 
@@ -161,11 +177,11 @@ export default function HomePage() {
           overflows. All scrolling happens inside the calendar wrapper div below,
           which is the sole scroll container on the page. */}
       <section
-          className="fixed inset-0 flex flex-col items-center justify-center px-4 sm:px-6 text-center"
+          className="fixed inset-0 flex flex-col items-center justify-start px-4 sm:px-6 text-center"
           style={{
             zIndex: 1,
             overflowY: 'clip',
-            paddingTop: 'calc(env(safe-area-inset-top) + 8px)',
+            paddingTop: 'calc(env(safe-area-inset-top) + 25dvh)',
             paddingBottom: 'calc(env(safe-area-inset-bottom) + 24px)',
           }}
         >
@@ -175,7 +191,7 @@ export default function HomePage() {
           </h1>
 
           <HeroButtonRow
-            className="mt-10"
+            className="mt-4"
             activePanel={panel}
             onDataToggle={() => toggle('data')}
             onBookToggle={() => toggle('book')}

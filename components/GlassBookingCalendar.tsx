@@ -152,9 +152,11 @@ export default function GlassBookingCalendar() {
       className="flex flex-col sm:flex-row overflow-hidden rounded-2xl sm:rounded-3xl border border-white/10 bg-ink/50 text-white shadow-2xl backdrop-blur-2xl w-full sm:w-auto"
       aria-label="Booking calendar"
     >
-      {/* ── LEFT: date grid — hidden on mobile once the user is past slots so the
-           full wrapper height goes to the form / success content instead. ── */}
-      <div className={cn('w-full sm:w-72 flex-shrink-0 p-4 sm:p-5', isMobile && step !== 'slots' && 'hidden sm:block')}>
+      {/* ── LEFT: date grid — hidden on mobile once a date is selected so the
+           calendar never expands (no layout shift, no Liquid Glass break).
+           Each step is a full replacement view; a back button lets users
+           return to the date picker. ── */}
+      <div className={cn('w-full sm:w-72 flex-shrink-0 p-4 sm:p-5', isMobile && selectedDate && 'hidden sm:block')}>
         {/* Month nav */}
         <div className="mb-4 flex items-center justify-between">
           <motion.p
@@ -244,9 +246,9 @@ export default function GlassBookingCalendar() {
         )}
       </div>
 
-      {/* ── Divider — also hidden on mobile once past slots step ──────────── */}
+      {/* ── Divider — hidden on mobile once a date is selected ─────────────── */}
       <AnimatePresence>
-        {selectedDate && !(isMobile && step !== 'slots') && (
+        {selectedDate && !isMobile && (
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
@@ -281,9 +283,23 @@ export default function GlassBookingCalendar() {
                   transition={{ duration: 0.2 }}
                   className="flex h-full flex-col p-4 sm:p-5 w-full sm:w-[400px]"
                 >
-                  <p className="mb-4 font-display text-sm font-semibold text-white/70">
+                  {isMobile && (
+                    <button
+                      onClick={() => { setSelectedDate(null); setSlots([]); setSlotsError(null); }}
+                      className="mb-3 flex items-center gap-1 self-start font-mono text-xs text-white/40 transition-colors hover:text-white"
+                    >
+                      <ChevronLeft className="h-3.5 w-3.5" />
+                      Change date
+                    </button>
+                  )}
+                  <p className="mb-1 font-display text-sm font-semibold text-white/70">
                     Available times
                   </p>
+                  {isMobile && selectedDate && (
+                    <p className="mb-4 font-mono text-[10px] text-white/40">
+                      {format(selectedDate, 'EEE, MMM d')}
+                    </p>
+                  )}
 
                   {slotsLoading && (
                     <div className="flex flex-1 items-center justify-center gap-2 text-white/40">

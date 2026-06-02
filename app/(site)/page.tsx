@@ -230,11 +230,7 @@ export default function HomePage() {
             onBookToggle={() => toggle('book')}
           />
 
-          <motion.div
-            layout
-            transition={{ type: 'spring', duration: 0.35, bounce: 0 }}
-            className="w-full"
-          >
+          <div className="w-full">
             <AnimatePresence>
               {panel === 'book' && (
                 <motion.div
@@ -291,7 +287,7 @@ export default function HomePage() {
                 </motion.div>
               )}
             </AnimatePresence>
-          </motion.div>
+          </div>
         </div>
       </section>
     </div>

@@ -15,7 +15,7 @@ import { site } from '@/lib/site';
 // Glow comes from box-shadow (not filter:blur on a child) so iOS Safari
 // clips it correctly to the pill border-radius without any overflow issue.
 const GLOW_CLS =
-  'group relative inline-flex h-10 sm:h-11 w-full items-center justify-center overflow-hidden rounded-[9999px] bg-ink px-4 sm:px-6 py-2.5 sm:py-3 text-sm sm:text-base font-medium text-white transition-all duration-300 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-signal shadow-[0_0_18px_rgba(47,107,255,0.35),0_0_36px_rgba(31,84,214,0.2),0_0_54px_rgba(17,197,212,0.1)] hover:shadow-[0_0_28px_rgba(47,107,255,0.6),0_0_56px_rgba(31,84,214,0.35),0_0_84px_rgba(17,197,212,0.2)]';
+  'group relative inline-flex h-10 sm:h-11 w-full items-center justify-center overflow-hidden rounded-[9999px] bg-ink px-4 sm:px-6 py-2.5 sm:py-3 text-sm sm:text-base font-medium text-white transition-all duration-300 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-signal shadow-[0_0_8px_rgba(47,107,255,0.18),0_0_16px_rgba(31,84,214,0.1),0_0_24px_rgba(17,197,212,0.05)] hover:shadow-[0_0_14px_rgba(47,107,255,0.32),0_0_28px_rgba(31,84,214,0.18),0_0_42px_rgba(17,197,212,0.1)] sm:shadow-[0_0_18px_rgba(47,107,255,0.35),0_0_36px_rgba(31,84,214,0.2),0_0_54px_rgba(17,197,212,0.1)] sm:hover:shadow-[0_0_28px_rgba(47,107,255,0.6),0_0_56px_rgba(31,84,214,0.35),0_0_84px_rgba(17,197,212,0.2)]';
 
 function GlowGradient() {
   return (

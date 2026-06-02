@@ -227,7 +227,18 @@ export default function HomePage() {
                   id="booking-calendar"
                   className="mt-6 w-full flex justify-center"
                 >
-                  <GlassBookingCalendar />
+                  {/* Scroll container scoped to the calendar so the outer fixed
+                      section never overflows. If the section scrolled instead,
+                      iOS Safari could let document scrollY escape the 62px
+                      runway and break the Liquid Glass compositing. */}
+                  <div
+                    className="w-full overflow-y-auto"
+                    style={{
+                      maxHeight: 'calc(100dvh - env(safe-area-inset-top) - env(safe-area-inset-bottom) - 160px)',
+                    }}
+                  >
+                    <GlassBookingCalendar />
+                  </div>
                 </motion.div>
               )}
               {panel === 'projects' && (

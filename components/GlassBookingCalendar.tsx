@@ -312,7 +312,7 @@ export default function GlassBookingCalendar() {
                   )}
 
                   {!slotsLoading && slots.length > 0 && (
-                    <div className="grid grid-cols-2 gap-2 overflow-y-auto pr-1 max-h-48 sm:max-h-[360px]">
+                    <div className="grid grid-cols-2 gap-2 overflow-y-auto pr-1 max-h-28 sm:max-h-[360px]">
                       {slots.map((slot) => (
                         <button
                           key={slot}

@@ -67,6 +67,12 @@ export default function GlassBookingCalendar() {
   const [notes, setNotes] = React.useState('');
   const [submitting, setSubmitting] = React.useState(false);
   const [bookingError, setBookingError] = React.useState<string | null>(null);
+
+  // Scroll a focused input into view after the keyboard has finished animating in.
+  const scrollOnFocus = (e: React.FocusEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+    const el = e.currentTarget;
+    setTimeout(() => el.scrollIntoView({ behavior: 'smooth', block: 'center' }), 300);
+  };
   const [confirmation, setConfirmation] = React.useState<{
     start: string;
     uid: string;
@@ -356,6 +362,7 @@ export default function GlassBookingCalendar() {
                       placeholder="Your name"
                       value={name}
                       onChange={(e) => setName(e.target.value)}
+                      onFocus={scrollOnFocus}
                       className={inputCls}
                       autoComplete="name"
                     />
@@ -365,6 +372,7 @@ export default function GlassBookingCalendar() {
                       placeholder="Email address"
                       value={email}
                       onChange={(e) => setEmail(e.target.value)}
+                      onFocus={scrollOnFocus}
                       className={inputCls}
                       autoComplete="email"
                     />
@@ -372,6 +380,7 @@ export default function GlassBookingCalendar() {
                       placeholder="Additional notes (optional)"
                       value={notes}
                       onChange={(e) => setNotes(e.target.value)}
+                      onFocus={scrollOnFocus}
                       rows={3}
                       className={`${inputCls} resize-none`}
                     />

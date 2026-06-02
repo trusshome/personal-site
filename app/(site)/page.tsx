@@ -186,6 +186,9 @@ export default function HomePage() {
           className="fixed inset-0 flex flex-col items-center justify-center px-4 sm:px-6 text-center"
           style={{
             zIndex: 1,
+            // 100dvh tracks the visual viewport (shrinks when the keyboard opens),
+            // so the section resizes and content overflows → scrollIntoView works.
+            height: '100dvh',
             overflowY: 'auto',
             overscrollBehavior: 'contain',
             paddingTop: 'calc(env(safe-area-inset-top) + 8px)',

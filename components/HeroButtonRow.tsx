@@ -15,7 +15,7 @@ import { site } from '@/lib/site';
 // Glow comes from box-shadow (not filter:blur on a child) so iOS Safari
 // clips it correctly to the pill border-radius without any overflow issue.
 const GLOW_CLS =
-  'group relative inline-flex h-10 sm:h-11 w-full items-center justify-center overflow-hidden rounded-[9999px] bg-ink px-4 sm:px-6 py-2.5 sm:py-3 text-sm sm:text-base font-medium text-white transition-all duration-300 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-signal shadow-[0_0_8px_rgba(47,107,255,0.18),0_0_16px_rgba(31,84,214,0.1),0_0_24px_rgba(17,197,212,0.05)] hover:shadow-[0_0_14px_rgba(47,107,255,0.32),0_0_28px_rgba(31,84,214,0.18),0_0_42px_rgba(17,197,212,0.1)] sm:shadow-[0_0_18px_rgba(47,107,255,0.35),0_0_36px_rgba(31,84,214,0.2),0_0_54px_rgba(17,197,212,0.1)] sm:hover:shadow-[0_0_28px_rgba(47,107,255,0.6),0_0_56px_rgba(31,84,214,0.35),0_0_84px_rgba(17,197,212,0.2)]';
+  'group relative inline-flex h-10 sm:h-11 items-center justify-center overflow-hidden rounded-[9999px] bg-ink px-4 sm:px-6 py-2.5 sm:py-3 text-sm sm:text-base font-medium text-white transition-all duration-300 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-signal shadow-[0_0_8px_rgba(47,107,255,0.18),0_0_16px_rgba(31,84,214,0.1),0_0_24px_rgba(17,197,212,0.05)] hover:shadow-[0_0_14px_rgba(47,107,255,0.32),0_0_28px_rgba(31,84,214,0.18),0_0_42px_rgba(17,197,212,0.1)] sm:shadow-[0_0_18px_rgba(47,107,255,0.35),0_0_36px_rgba(31,84,214,0.2),0_0_54px_rgba(17,197,212,0.1)] sm:hover:shadow-[0_0_28px_rgba(47,107,255,0.6),0_0_56px_rgba(31,84,214,0.35),0_0_84px_rgba(17,197,212,0.2)]';
 
 function GlowGradient() {
   return (
@@ -44,18 +44,17 @@ function DockButton({
   const scale = useSpring(scaleSync, { mass: 0.1, stiffness: 150, damping: 12 });
 
   return (
-    <motion.div ref={ref} style={{ scale }} className="w-full sm:w-auto">
+    <motion.div ref={ref} style={{ scale }}>
       {children}
     </motion.div>
   );
 }
 
-type Panel = 'none' | 'book' | 'projects' | 'data';
+type Panel = 'none' | 'book' | 'data';
 
 interface HeroButtonRowProps {
   className?: string;
   activePanel: Panel;
-  onProjectsToggle: () => void;
   onDataToggle: () => void;
   onBookToggle: () => void;
 }
@@ -63,7 +62,6 @@ interface HeroButtonRowProps {
 export default function HeroButtonRow({
   className,
   activePanel,
-  onProjectsToggle,
   onDataToggle,
   onBookToggle,
 }: HeroButtonRowProps) {
@@ -73,22 +71,8 @@ export default function HeroButtonRow({
     <motion.div
       onMouseMove={(e) => mouseX.set(e.pageX)}
       onMouseLeave={() => mouseX.set(Infinity)}
-      className={`grid grid-cols-2 gap-2 sm:flex sm:flex-wrap sm:items-center sm:justify-center sm:gap-8 ${className ?? ''}`}
+      className={`flex items-center justify-center gap-2 sm:gap-8 ${className ?? ''}`}
     >
-      <DockButton mouseX={mouseX}>
-        <button
-          onClick={onProjectsToggle}
-          aria-expanded={activePanel === 'projects'}
-          className={GLOW_CLS}
-        >
-          <GlowGradient />
-          <span className="relative flex items-center gap-2">
-            Projects
-            <ArrowUpRight aria-hidden className="h-3.5 w-3.5 text-white/90" />
-          </span>
-        </button>
-      </DockButton>
-
       <DockButton mouseX={mouseX}>
         <button
           onClick={onDataToggle}
@@ -119,7 +103,7 @@ export default function HeroButtonRow({
       </DockButton>
 
       <DockButton mouseX={mouseX}>
-        <GlowLink href={site.linkedin} external className="px-6 py-3 text-base">
+        <GlowLink href={site.linkedin} external className="px-4 sm:px-6 py-2.5 sm:py-3 text-sm sm:text-base">
           Find Me
         </GlowLink>
       </DockButton>

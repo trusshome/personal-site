@@ -8,55 +8,7 @@ import GlassBookingCalendar from '@/components/GlassBookingCalendar';
 import { ShaderAnimation } from '@/components/ShaderAnimation';
 import { CircularGallery, type GalleryItem } from '@/components/ui/circular-gallery';
 
-type Panel = 'none' | 'book' | 'projects' | 'data';
-
-const galleryItems: GalleryItem[] = [
-  {
-    title: 'Inventory Dashboard',
-    subtitle: 'Internal tool · 2025',
-    label: 'Full-stack',
-    photo: {
-      url: 'https://images.unsplash.com/photo-1550751827-4bd374c3f58b?w=600&h=800&auto=format&fit=crop&q=80',
-      alt: 'dashboard UI',
-    },
-  },
-  {
-    title: 'Route Optimizer',
-    subtitle: 'Logistics · 2025',
-    label: 'Backend',
-    photo: {
-      url: 'https://images.unsplash.com/photo-1526628953301-3e589a6a8b74?w=600&h=800&auto=format&fit=crop&q=80',
-      alt: 'route map',
-    },
-  },
-  {
-    title: 'Booking Engine',
-    subtitle: 'SaaS · 2025',
-    label: 'Builder',
-    photo: {
-      url: 'https://images.unsplash.com/photo-1504384308090-c894fdcc538d?w=600&h=800&auto=format&fit=crop&q=80',
-      alt: 'office laptop',
-    },
-  },
-  {
-    title: 'Fan Data Enrichment',
-    subtitle: 'Sales demo · 2025',
-    label: 'Data',
-    photo: {
-      url: 'https://images.unsplash.com/photo-1509228468518-180dd4864904?w=600&h=800&auto=format&fit=crop&q=80',
-      alt: 'data chart',
-    },
-  },
-  {
-    title: 'Mobile Dispatch',
-    subtitle: 'Field ops · 2025',
-    label: 'Mobile',
-    photo: {
-      url: 'https://images.unsplash.com/photo-1512941937669-90a1b58e7e9c?w=600&h=800&auto=format&fit=crop&q=80',
-      alt: 'mobile phone',
-    },
-  },
-];
+type Panel = 'none' | 'book' | 'data';
 
 const dataItems: GalleryItem[] = [
   {
@@ -225,7 +177,6 @@ export default function HomePage() {
           <HeroButtonRow
             className="mt-10"
             activePanel={panel}
-            onProjectsToggle={() => toggle('projects')}
             onDataToggle={() => toggle('data')}
             onBookToggle={() => toggle('book')}
           />
@@ -252,22 +203,6 @@ export default function HomePage() {
                   >
                     <GlassBookingCalendar />
                   </div>
-                </motion.div>
-              )}
-              {panel === 'projects' && (
-                <motion.div
-                  key="projects"
-                  {...PANEL_ANIM}
-                  className="mt-6 w-full h-[260px] sm:h-[500px]"
-                >
-                  <CircularGallery
-                    items={galleryItems}
-                    radius={isMobile ? 180 : 360}
-                    cardWidth={isMobile ? 130 : 260}
-                    cardHeight={isMobile ? 180 : 360}
-                    autoRotateSpeed={0.04}
-                    className="w-full h-full"
-                  />
                 </motion.div>
               )}
               {panel === 'data' && (

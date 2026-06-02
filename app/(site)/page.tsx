@@ -131,18 +131,35 @@ export default function HomePage() {
       e.preventDefault();
     };
 
-    // When the virtual keyboard appears the visual viewport shrinks. Calling
-    // scrollIntoView on the focused input asks the nearest scrollable ancestor
-    // (the calendar wrapper) to bring it into view — keeping it above the keyboard
-    // without moving the document. The window scroll listener above restores
-    // scrollY if scrollIntoView briefly touches the document.
+    // When the virtual keyboard appears, visualViewport.height shrinks to the
+    // area above the keyboard. Measure how much the focused input is hidden
+    // behind it, then scroll the nearest overflow container (the calendar wrapper)
+    // by exactly that amount. We never touch the document scroll so the Liquid
+    // Glass runway stays at 62px throughout.
     const onViewportResize = () => {
       const el = document.activeElement as HTMLElement | null;
-      if (el?.tagName === 'INPUT' || el?.tagName === 'TEXTAREA') {
-        requestAnimationFrame(() =>
-          el.scrollIntoView({ block: 'nearest', behavior: 'smooth' }),
-        );
-      }
+      if (!el || (el.tagName !== 'INPUT' && el.tagName !== 'TEXTAREA')) return;
+      const vv = window.visualViewport;
+      if (!vv) return;
+
+      requestAnimationFrame(() => {
+        const rect = el.getBoundingClientRect();
+        const keyboardTop = vv.offsetTop + vv.height; // y where keyboard starts
+        const buffer = 16; // px of breathing room above the keyboard edge
+
+        if (rect.bottom > keyboardTop - buffer) {
+          // Find the nearest overflow-y scrollable ancestor (the calendar wrapper)
+          let scrollEl: HTMLElement | null = el.parentElement;
+          while (scrollEl && scrollEl !== document.documentElement) {
+            const oy = getComputedStyle(scrollEl).overflowY;
+            if ((oy === 'auto' || oy === 'scroll') && scrollEl.scrollHeight > scrollEl.clientHeight) break;
+            scrollEl = scrollEl.parentElement;
+          }
+          if (scrollEl && scrollEl !== document.documentElement) {
+            scrollEl.scrollTop += rect.bottom - (keyboardTop - buffer);
+          }
+        }
+      });
     };
     window.visualViewport?.addEventListener('resize', onViewportResize);
 

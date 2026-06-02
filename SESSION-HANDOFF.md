@@ -1,7 +1,7 @@
 # Session Handoff. Entity resoLOUtion
 
 Owner. Luciano Tarabocchia II (Lou)
-Last updated. Sunday, June 1 2026
+Last updated. Monday, June 2 2026
 Read with. CLAUDE.md for brand and conventions, build-plan.md for the step sequence, prompts.md for the copy paste prompts, site-standup.md for the running log.
 
 This file lets a brand new session resume the build cold, with no chat history, and go straight to the next step. It matches what is on disk, not memory.
@@ -14,7 +14,7 @@ What it is. A personal showcase site for Lou that positions him as a builder who
 
 The single conversion. Book a call.
 
-Domain. www.entityresoloution.com. Live. SSL active on www, apex still propagating (check entityresoloution.com without www if not yet).
+Domain. www.entityresoloution.com. Live. SSL active on www and apex.
 
 Booking. Cal.com, https://cal.com/entity-resoloution. Event type slug is 30min. The spelling is deliberate, resoloution not resolution.
 
@@ -28,11 +28,11 @@ Stack. Next.js 16.2.6 App Router, React 19.2.4, TypeScript, Tailwind v4 via @tai
 
 Git. github.com/trusshome/personal-site (private). Branch main. Author hello@trusshomeco.com / trusshome.
 
-Vercel. Project personal-site under truss-home-s-projects team. Deployed to production. CAL_COM_API_KEY set in Vercel environment (production). The BOM issue is fixed — the key was re-added using raw ASCII bytes via cmd stdin redirect.
+Vercel. Project personal-site under truss-home-s-projects team. Deployed to production. CAL_COM_API_KEY set in Vercel environment (production).
 
 Tokens. Live as CSS variables in app/globals.css inside the Tailwind v4 @theme block. Reference tokens by name in components, never raw hex.
 
-Route group. The (site) layout holds only the main wrapper. Home, about, and work routes sit inside app/(site). Book sits at app/book/page.tsx. Home page is full-bleed dark hero. No Nav or Footer mounted anywhere.
+Route group. The (site) layout holds only the main wrapper. Home route sits inside app/(site). Book sits at app/book/page.tsx. Home page is full-bleed dark hero. No Nav or Footer mounted anywhere.
 
 Pages live now.
 
@@ -44,7 +44,7 @@ On disk now.
 ```
 app/
   layout.tsx              root, html plus body plus fonts plus metadata plus Analytics
-  globals.css             Direction A tokens, base, animations, reduced motion
+  globals.css             Direction A tokens, base, animations, reduced motion, scrollbar hide
   opengraph-image.tsx     dynamic 1200 by 630 OG image
   sitemap.ts              returns only / (all other pages are 404)
   robots.ts               allows all, points to sitemap
@@ -65,14 +65,14 @@ components/
   Footer.tsx              exists but not mounted
   CTAButton.tsx           delegates to GlowLink, fires book_a_call analytics
   GlowLink.tsx            shared glow-pill visual for all CTA buttons
-  HeroButtonRow.tsx       dock magnification row — Projects, Data, Book, Find Me
+  HeroButtonRow.tsx       three-button dock row — Data, Book, Find Me (single flex row)
   GlassBookingCalendar.tsx  three-step on-page booking: date > slots > form > success
   ShaderAnimation.tsx     three.js WebGL line-field for the hero background
   ProjectCard.tsx         kept on disk, not used on any live page
   ResolveAnim.tsx         original dots animation, not used, safe to delete
   SiteHeader.tsx          not used
   ui/
-    circular-gallery.tsx  3D rotating card carousel used in hero panels
+    circular-gallery.tsx  3D rotating card carousel used in hero Data panel
     focus-rail.tsx        3D swipeable rail used on /work (currently 404)
 content/      work.ts — typed case studies. Truss Home and ESP published, Jets removed.
 lib/          site.ts (config, cal link, calEvent, linkedin), analytics.ts, utils.ts (cn helper)
@@ -85,17 +85,16 @@ lib/          site.ts (config, cal link, calEvent, linkedin), analytics.ts, util
 The hero (app/(site)/page.tsx) is a client component managing a panel state.
 
 ```
-type Panel = 'none' | 'book' | 'projects' | 'data'
+type Panel = 'none' | 'book' | 'data'
 ```
 
-Four dock buttons: Projects, Data, Book, Find Me.
+Three dock buttons: Data, Book, Find Me. All on one flex row on all screen sizes.
 
-- Projects — opens CircularGallery with 5 placeholder project cards (no hrefs yet)
 - Data — opens CircularGallery with 6 PDL use case cards (no hrefs yet)
 - Book — opens GlassBookingCalendar
 - Find Me — external link to site.linkedin
 
-Opening any panel closes the current one. AnimatePresence with fast 150ms exit + motion.div layout spring handles the height transition without the snap/pause that existed before.
+Opening any panel closes the current one. AnimatePresence with fast 150ms exit + PANEL_ANIM handles the transition. The outer wrapper is a plain div (not motion.div layout) — layout animations on this div previously broke iOS Liquid Glass compositing via FLIP scaleY transforms.
 
 ---
 
@@ -103,7 +102,7 @@ Opening any panel closes the current one. AnimatePresence with fast 150ms exit +
 
 components/ui/circular-gallery.tsx
 
-A 3D rotating card carousel. Cards rotate on a ring with perspective 2000px. Interaction: drag to spin, wheel to spin, auto-rotate when idle (pauses on interaction, resumes after 800ms). Clicking a card navigates to its href (if set).
+A 3D rotating card carousel. Cards rotate on a ring with perspective 2000px. Interaction: drag to spin (mouse), wheel to spin (desktop), touch swipe to spin (mobile — non-passive touchmove listener, stopPropagation to bypass document scroll lock, preventDefault to stop native pan). Auto-rotate when idle, resumes with momentum deceleration after swipe (MOMENTUM_LERP=0.06).
 
 GalleryItem type:
 ```ts
@@ -116,34 +115,30 @@ GalleryItem type:
 }
 ```
 
-Used in page.tsx with radius=360, autoRotateSpeed=0.04.
+Props: radius, autoRotateSpeed, cardWidth, cardHeight (all responsive — see page.tsx isMobile state).
 
-Project cards: 5 placeholder cards in galleryItems. All photo URLs are Unsplash. No hrefs set yet.
-Data cards: 6 PDL use case cards in dataItems (Fan Enrichment, Lead Intelligence, Talent Mapping, Market Sizing, ICP Builder, Network Graph). No hrefs set yet.
+Mobile: cardWidth=130, cardHeight=180, radius=180, panel h-[260px].
+Desktop: cardWidth=260, cardHeight=360, radius=360, panel sm:h-[500px].
 
-When Lou is ready to add real projects, update galleryItems in page.tsx with real title, subtitle, photo.url (screenshot or real image), and href pointing to the case study or blog post.
-
-When Lou builds the blog, update dataItems hrefs to point to /blog/slug.
+Data cards: 6 PDL use case cards (Fan Enrichment, Lead Intelligence, Talent Mapping, Market Sizing, ICP Builder, Network Graph). No hrefs yet. Will link to blog posts.
 
 ---
 
 ## Cal.com API — v2
 
-Both routes were migrated from Cal.com API v1 (decommissioned) to v2 in this session.
+Both routes use Cal.com v2 (v1 is decommissioned).
 
 slots/route.ts:
-- GET https://api.cal.com/v2/event-types — header Authorization: Bearer key, cal-api-version: 2024-06-14
-- Response: { status, data: [...] } — find slug 30min, cache id
-- GET https://api.cal.com/v2/slots — header cal-api-version: 2024-09-04
-- Response: { status, data: { "YYYY-MM-DD": [{ start: "..." }] } } — date map directly in data, not nested under slots key
-- Returns { slots: string[], eventTypeId: number } to the client
+- GET /v2/event-types → find slug 30min → cache eventTypeId
+- GET /v2/slots → response data.data is the date map directly
+- Returns { slots: string[], eventTypeId: number }
 
 book/route.ts:
-- POST https://api.cal.com/v2/bookings — header cal-api-version: 2026-02-25
+- POST /v2/bookings with cal-api-version: 2026-02-25
 - Body: { eventTypeId, start, attendee: { name, email, timeZone }, bookingFieldsResponses: { notes } }
-- Response: { status, data: { uid, start } } — returns { uid, startTime: booking.start } to client
+- Returns { uid, startTime }
 
-GlassBookingCalendar sends name, email, notes, timeZone, start, eventTypeId to /api/cal/book and expects { uid, startTime } back. No changes needed to the component.
+GlassBookingCalendar expects { uid, startTime } from /api/cal/book.
 
 ---
 
@@ -151,7 +146,7 @@ GlassBookingCalendar sends name, email, notes, timeZone, start, eventTypeId to /
 
 Tokens. ink #14171C, paper #F7F5F0, signal #2F6BFF, signal-dark #1F54D6, signal-tint #E7EEFF, slate #5A626E, hairline #E3E0D8, cyan-motion #11C5D4.
 
-One accent rule. signal is the only CTA color. The glow-pill buttons use a gradient from signal through signal-dark to cyan-motion — this was a deliberate product decision that extends cyan-motion into the button UI. CLAUDE.md still documents the original rule.
+One accent rule. signal is the only CTA color. The glow-pill buttons use box-shadow with signal/signal-dark/cyan-motion RGBA values — NOT filter:blur (breaks iOS Safari overflow clipping).
 
 Wordmark rule. entity reso[LOU]tion — entity, reso, tion in ink (or paper on dark). LOU in signal, same weight.
 
@@ -159,27 +154,26 @@ Hero. Full-bleed dark, WebGL shader background. No top nav on any page currently
 
 ---
 
-## What shipped in this session
+## What shipped in this session (June 1–2 2026)
 
-Cal.com v1 to v2 migration. Both API routes rewritten. Fixed the slot parsing bug (data.data is the date map, not data.data.slots). Smoke tested on production.
+Desktop scrollbar hidden. scrollbar-width:none + ::-webkit-scrollbar{display:none} on html. Keeps overflow-y:scroll for Liquid Glass runway without showing the track.
 
-Circular gallery. Built components/ui/circular-gallery.tsx — 3D ring carousel with drag, wheel, and auto-rotate. Replaced the FocusRail-based hero panel and the HeroProjectCards component (deleted). Work page still has FocusRail but returns notFound.
+CircularGallery responsive. cardWidth/cardHeight props with mobile/desktop values in page.tsx. Touch swipe fixed (non-passive listener, stopPropagation). Direction corrected (prev+dx). Momentum deceleration into auto-rotate (EMA velocity → lerp to autoRotateSpeed).
 
-Hero panel system. Four buttons (Projects, Data, Book, Find Me). Panel state manages mutual exclusivity. AnimatePresence + motion.div layout smooths open/close transitions — fixed the snap and pause that previously appeared when toggling panels.
+Button glow iOS fix. Replaced filter:blur child with box-shadow on the button element. Responsive shadow intensity (smaller on mobile). iOS now clips glow to pill shape correctly.
 
-Data gallery. Six PDL use case cards added as a separate panel in the hero.
+Booking calendar Liquid Glass preservation. Six-pass fix:
+1. Calendar wrapper with overflow-y:auto + overscrollBehavior:contain + maxHeight.
+2. Section overflow-y:clip — never a scroll container.
+3. window scroll listener snaps scrollY to 62px offset whenever anything moves it.
+4. Left panel hidden on mobile for form and success steps.
+5. Left panel hidden on mobile for slots step too (eliminates calendar expansion on date tap).
+6. Removed motion.div layout from panel wrapper (FLIP animation was breaking GPU compositing).
+7. visualViewport resize listener calculates exact keyboard overlap and scrolls the calendar wrapper by that amount — never touches document scroll.
 
-Pre-deploy audit. HeroProjectCards.tsx deleted (unused, type error). focus-rail.tsx transition type fixed. All pages except / return notFound. Sitemap trimmed to / only. .gitignore created.
+Input zoom fix. inputCls text-sm → text-base (16px) to prevent iOS auto-zoom.
 
-Git and deploy.
-- git init inside personal-site, branch main
-- Pushed to github.com/trusshome/personal-site (private)
-- All commits authored as hello@trusshomeco.com / trusshome (history rewritten and force-pushed)
-- Deployed to Vercel production via vercel --prod
-- vercel.json added with framework: nextjs (was needed because the pre-existing Vercel project had no framework set)
-- CAL_COM_API_KEY added to Vercel — first two attempts had BOM corruption from PowerShell pipe encoding. Fixed by writing raw ASCII bytes to a temp file and redirecting via cmd stdin.
-- Namecheap DNS configured. www.entityresoloution.com is live (200). Apex propagating.
-- Production smoke test passed: Cal.com slots API returns real data (11 slots, eventTypeId 5863479).
+Button layout. Three buttons (Data, Book, Find Me), single flex row on all screen sizes, gap-2 mobile / gap-8 desktop. Projects button and panel removed. mt-10 → mt-4 (wordmark-to-buttons gap).
 
 ---
 
@@ -201,77 +195,65 @@ Orphaned dev server. Kill all node before starting a fresh dev server to avoid s
 
 ---
 
-## iOS 26 Safari Liquid Glass fix (June 1 2026, second session)
+## iOS 26 Safari Liquid Glass — full technical record
 
-The hero shader would not bleed behind the iOS 26 Safari status bar or bottom
-toolbar. Many wrong attempts (theme-color, 100dvh, 100lvh on a fixed layer,
-viewport-fit alone) failed. Root cause and real fix come from
-https://1ar.io/updates/safari-26-liquid-glass-web.
+Source: https://1ar.io/updates/safari-26-liquid-glass-web
 
-Root cause. iOS 26 Liquid Glass samples the root CSS background-color behind
-its chrome at scrollY 0, ignores theme-color entirely, and does NOT composite
-fixed or absolute layers behind the chrome. It composites normal-flow content,
-and only once scrollY > 0.
+Root cause. iOS 26 samples root CSS background-color behind its chrome at scrollY 0, ignores theme-color, and composites ONLY normal-flow content — not fixed or absolute layers — and only when scrollY > 0.
 
-What is now in place:
-- globals.css `:root` vars: `--safari-chrome-bg: #14171C`, `--safari-top-bleed:
-  62px`, `--safari-bottom-bleed: 136px`, `--safari-scroll-offset: 62px`.
-- `html { min-height:100%; overflow-y:scroll; overscroll-behavior:none;
-  background-color: var(--safari-chrome-bg) }`.
-- `body { min-height: calc(100dvh + var(--safari-scroll-offset)); margin:0;
-  background-color: var(--safari-chrome-bg) }`. NOTE the old `body` background
-  was `--color-paper` (light) which is what Safari was sampling. Now ink.
-- app/layout.tsx: html/body have NO inline bg styles or bg-ink class anymore;
-  globals.css owns the root color. viewport has `viewport-fit: cover` and
-  `colorScheme: 'dark'`. theme-color is intentionally NOT set.
-- app/(site)/page.tsx hero structure:
-  - Outer wrapper `div { position: relative; display: flow-root }` (flow-root
-    stops the negative-margin from collapsing).
-  - MEDIA STAGE, in normal flow (this is what composites behind the chrome):
-    `height: calc(100lvh + top-bleed + bottom-bleed); margin-top:
-    calc(-1 * top-bleed)`. Holds `<ShaderAnimation/>`. 100lvh (not dvh) so it is
-    always full screen plus bleed in every bar state.
-  - CONTENT, `position: fixed; inset: 0; overflowY: auto; overscrollBehavior:
-    contain` with safe-area padding. Fixed so the runway scroll never moves the
-    content; internal overflow lets tall panels (the calendar) scroll.
-- ShaderAnimation.tsx: canvas decoupled from buffer — `setSize(w,h,false)` plus
-  canvas CSS `width/height: 100%`. A ResizeObserver on the container re-renders
-  on size changes the window resize event misses on iOS.
-- Scroll lock (page.tsx useEffect): on load `scrollTo(0, offset)` (mobile reads
-  --safari-scroll-offset, desktop 0). Then a `touchmove` listener with
-  `{ passive:false }` calls preventDefault on any gesture UNLESS it lands inside
-  a real scrollable element (walks up checking overflowY auto/scroll with
-  scrollHeight > clientHeight). This freezes the document so users cannot scroll
-  the hero away, while panels still scroll. scrollY stays at the offset so
-  Liquid Glass stays composited. The earlier snap-back approach was removed (janky).
+What is in place:
 
-Also fixed this session: title fluid size `text-[1.75rem]` to `sm:text-5xl` to
-`lg:text-7xl` with whitespace-nowrap; buttons `rounded-[9999px]` (not
-rounded-full, which Safari mis-rendered) in a `grid grid-cols-2` on mobile and
-`sm:flex` on desktop; GlassBookingCalendar responsive (flex-col on mobile, height
-animation instead of width); OG image redesigned to the dark hero palette;
-security headers + API input validation added (see fix: commits).
+globals.css:
+- :root vars: --safari-chrome-bg:#14171C, --safari-top-bleed:62px, --safari-bottom-bleed:136px, --safari-scroll-offset:62px.
+- html: min-height:100%; overflow-y:scroll; overscroll-behavior:none; background-color:var(--safari-chrome-bg); scrollbar-width:none.
+- html::-webkit-scrollbar { display:none }.
+- body: min-height:calc(100dvh + 62px); background-color:var(--safari-chrome-bg).
+
+app/layout.tsx: html/body have no inline bg styles. viewport has viewport-fit:cover and colorScheme:dark. theme-color intentionally NOT set.
+
+app/(site)/page.tsx hero structure:
+- Outer wrapper: position:relative; display:flow-root.
+- MEDIA STAGE: in normal flow. height:calc(100lvh+top-bleed+bottom-bleed); margin-top:calc(-1*top-bleed). Holds ShaderAnimation.
+- CONTENT OVERLAY: position:fixed; inset:0; overflow-y:clip (NOT auto — clip means it is never a scroll container). justify-center. safe-area padding.
+
+Scroll lock (page.tsx useEffect):
+- On load: window.scrollTo(62, 0) on mobile, 0 on desktop.
+- window scroll listener: if |scrollY - offset| > 2px, snap back instantly. Handles both overscroll chain and iOS keyboard scroll.
+- touchmove listener with passive:false: preventDefault unless touch is inside an element with overflowY auto/scroll AND scrollHeight > clientHeight.
+- visualViewport resize listener: on keyboard appear, calculate overlap between focused input bottom and visual viewport bottom, scroll the nearest overflow container (calendar wrapper) by that amount. Never touches document.
+
+Calendar wrapper in book panel:
+- overflow-y:auto; overscrollBehavior:contain; maxHeight:calc(100dvh-safe-area-insets-225px).
+- 225px accounts for the section padding + wordmark + mt-4 + buttons (2×40px rows? No — now single row 40px) + mt-6. Recalculate if layout changes significantly.
+
+Mobile booking step-replacement:
+- GlassBookingCalendar hides the left panel (date picker) on mobile whenever selectedDate !== null.
+- Each step (slots, form, success) is a full-width replacement view with a back button.
+- This prevents the calendar from expanding in height when a date is tapped — the height stays bounded by the right panel only, which fits within the wrapper max-height.
+
+ShaderAnimation.tsx: canvas uses setSize(w,h,false) plus CSS width/height:100%. ResizeObserver on container.
+
+Do NOT:
+- Set theme-color meta tag.
+- Make the shader fixed or absolute.
+- Set body background to paper (light). Must be ink.
+- Use motion.div layout on the panel wrapper div in page.tsx.
+
+---
 
 ## Current state
 
-www.entityresoloution.com is live. The hero page shows the full-bleed WebGL
-shader (now correctly bleeding behind both iOS 26 Safari bars), entity
-resoLOUtion wordmark, four dock buttons (Projects, Data, Book, Find Me), and the
-correct panel for whichever button is active. The hero is scroll-locked on
-mobile. Booking calendar fetches real Cal.com slots (v2 API) and completes
-bookings. All other pages return 404. Sitemap shows only /. Standalone web-app
-meta + manifest are in place. GitHub repo is clean and authored as
-hello@trusshomeco.com / trusshome.
+www.entityresoloution.com is live. The hero page shows the full-bleed WebGL shader bleeding behind iOS 26 Safari bars, entity resoLOUtion wordmark, three glow-pill dock buttons (Data, Book, Find Me) on one row. Data panel opens a circular gallery with 6 PDL use case cards. Book panel opens the glass booking calendar — full mobile booking flow verified working. All steps (date picker, slots, form, success) maintain Liquid Glass compositing throughout. Find Me links to LinkedIn. All other pages return 404. GitHub repo is clean.
 
 ---
 
 ## Next steps
 
-1. Replace placeholder gallery cards with real project photos and titles when ready.
-2. Build blog repository and wire dataItems hrefs to /blog/slug.
-3. Confirm ESP written permission and publish the case study (change status to published in content/work.ts and restore work page).
-4. Verify book_a_call analytics event is recording in Vercel Analytics dashboard.
-5. Confirm apex domain (entityresoloution.com without www) once DNS propagates.
+1. Replace placeholder Data gallery cards with real hrefs when blog posts exist.
+2. Build blog at /blog/[slug] and wire dataItems hrefs.
+3. Confirm ESP written permission and restore work page with the case study.
+4. Verify book_a_call analytics event is recording in Vercel Analytics.
+5. Custom home-screen app icon (currently iOS uses a page screenshot).
 
 ---
 
@@ -281,4 +263,4 @@ hello@trusshomeco.com / trusshome.
 2. Confirm the live site is up at www.entityresoloution.com before making changes.
 3. Use npm install --force for any new packages.
 4. Do not pipe env vars through PowerShell — use the cmd stdin redirect method documented in Gotchas.
-5. Honor the shared rules. Plan first and wait for go, tests first, implement the minimum, verify, document.
+5. Honor the shared rules. Plan first and wait for go, implement the minimum, verify nothing regressed, document while context is fresh.

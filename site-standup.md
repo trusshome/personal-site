@@ -4,7 +4,7 @@ Owner. Luciano Tarabocchia II (Lou)
 Project. Entity resoLOUtion personal showcase site
 Domain. www.entityresoloution.com (live)
 Folder. 007 - TrussHomeCo / 002 - ClaudeCode / personal-site
-Last updated. Sunday, June 1 2026
+Last updated. Monday, June 2 2026
 
 This is the running standup for the personal site. Read it before each new session so you know the goal, where the work stands, what is in flight, what changed, what failed, and the one next step. Keep it current.
 
@@ -20,122 +20,93 @@ A personal showcase site that positions Lou as a builder who ships real solution
 
 Site is deployed and live at www.entityresoloution.com. Only the hero page is public. All other routes return 404.
 
-GitHub: trusshome/personal-site (private). Vercel: truss-home-s-projects/personal-site.
+The hero shows the WebGL shader, entity resoLOUtion wordmark, and three dock buttons (Data, Book, Find Me) on one row. Clicking Data opens a 3D rotating circular gallery. Clicking Book opens the glass booking calendar. Find Me links to LinkedIn.
 
-The hero shows the WebGL shader, entity resoLOUtion wordmark, and four dock buttons (Projects, Data, Book, Find Me). Clicking Projects or Data opens a 3D rotating circular gallery. Clicking Book opens the glass booking calendar. Find Me links to LinkedIn.
-
-Cal.com booking is fully functional on production. The API routes use Cal.com v2 (v1 was decommissioned). Slots and bookings both verified working. 11 slots returning for available days.
+Cal.com booking is fully functional on production (v2 API). The full mobile booking flow works without breaking iOS 26 Liquid Glass at any step.
 
 Gallery cards are placeholder content. No hrefs set yet. Real content to be added when Lou is ready.
 
 ---
 
-## What changed this session (June 1 2026)
+## What changed this session (June 1–2 2026)
 
-Cal.com v1 to v2 migration.
-Both API routes (slots, book) were broken because Cal.com decommissioned their v1 API. Migrated to v2: Bearer auth header instead of query param, updated endpoint paths, updated response parsing. The slots response has the date map directly in data.data (not nested under data.data.slots as originally assumed). Fixed.
+### Desktop scrollbar
+Hide the scrollbar visually via scrollbar-width:none and ::-webkit-scrollbar{display:none} on html. Keeps overflow-y:scroll (needed for Liquid Glass runway) without showing a scrollbar track.
 
-CircularGallery component.
-Built components/ui/circular-gallery.tsx. A 3D ring carousel with perspective 2000px. Cards are 260x360px, aspect 3/4. Interaction: drag to spin, mouse wheel to spin, auto-rotate when idle (pauses on interaction, resumes 800ms after). Clicking a card navigates to its href. Radius and autoRotateSpeed are props.
+### CircularGallery responsive sizing
+Added cardWidth and cardHeight props to CircularGallery. page.tsx detects mobile (≤640px) and passes 130×180px cards with radius=180 on mobile, 260×360px with radius=360 on desktop. Panel container uses h-[260px] sm:h-[500px] Tailwind classes.
 
-Hero panel system.
-Replaced the single bookOpen boolean with a panel state (none/book/projects/data). Four buttons now. Projects and Data each open their own CircularGallery. Book opens GlassBookingCalendar. Buttons are mutually exclusive. AnimatePresence with motion.div layout handles smooth height transitions.
+### Gallery swipe (mobile)
+The document-level touchmove lock was preventing gallery drag on iOS. Fixed by adding a non-passive touchmove listener directly on the gallery container that calls stopPropagation (bypasses the page lock) and preventDefault (stops native pan), then rotates the ring from touches[0].clientX. Pointer handlers skip pointerType==='touch' to avoid double processing.
 
-Transition fix.
-The snap-and-pause on panel close was caused by two things: AnimatePresence mode=wait holding the layout open during the spring exit, and GlassBookingCalendar's own inner exit animation propagating through the tree and extending the hold. Fixed by splitting enter/exit transitions (spring enter, 150ms easeOut exit), wrapping AnimatePresence in a motion.div layout, dropping mode=wait, and removing the inner exit animation from GlassBookingCalendar's root element.
+### Swipe direction + momentum
+Direction was inverted — changed prev-dx*0.4 to prev+dx*0.4 so a right swipe rotates right. Added velocity tracking (smoothed EMA of dx/dt) and a currentVelocity ref that the auto-rotate tick lerps toward autoRotateSpeed at MOMENTUM_LERP=0.06, creating natural deceleration into the background spin instead of a hard stop.
 
-Data gallery.
-Six PDL use case cards added as the Data panel: Fan Enrichment, Lead Intelligence, Talent Mapping, Market Sizing, ICP Builder, Network Graph. No hrefs yet. Will link to blog posts.
+### Button glow (mobile rectangle bug)
+iOS Safari doesn't clip filter:blur children to a parent's overflow:hidden+border-radius. Replaced the blurred absolute-inset gradient span with box-shadow on the button element itself. Box-shadow always respects border-radius. Shadow values are smaller on mobile (responsive sm: variants), full strength on desktop.
 
-Pre-deploy audit.
-- HeroProjectCards.tsx deleted (unused, had TypeScript type error on transition prop)
-- focus-rail.tsx transition type fixed (per-property object instead of function)
-- /about, /work, /work/[slug], /book all return notFound() — files kept for future
-- Sitemap trimmed to / only
-- .gitignore created
+### Booking calendar — iOS Liquid Glass preservation (multiple passes)
+This was the main work of the session. Root cause: anything that moves document scrollY off the 62px runway stops iOS 26 from compositing the in-flow shader behind its chrome.
 
-Git setup and deploy.
-- git init, branch main, initial commit
-- Pushed to github.com/trusshome/personal-site
-- Rewritten history: all commits use hello@trusshomeco.com / trusshome (force-pushed)
-- vercel.json added with framework: nextjs (pre-existing Vercel project had no framework set, caused output directory error)
-- CAL_COM_API_KEY added to Vercel — first two attempts corrupted by PowerShell pipe BOM. Fixed using cmd stdin redirect with raw ASCII bytes.
-- Namecheap DNS: A record @ to 76.76.21.21, CNAME www to cname.vercel-dns.com
-- www.entityresoloution.com: 200. Apex: propagating.
-- Production smoke test: 11 slots returned, eventTypeId 5863479.
+Fixes applied in order:
+1. Calendar wrapper div (overflow-y:auto, overscrollBehavior:contain, maxHeight calc) so the fixed section never needs to scroll.
+2. Section overflow-y changed from auto to clip — clip creates a visual clipping region without creating a scroll container, so iOS cannot scroll the section at all.
+3. window scroll listener that snaps scrollY back to the 62px offset whenever anything moves it (handles both overscroll chain and virtual keyboard displacement).
+4. Left panel (date picker) hidden on mobile for form and success steps — freed the full wrapper height for those steps. Added a "Change date" back button and date·time context badge in the slots and form steps.
+5. Left panel also hidden on mobile for the slots step. Most important fix: the calendar no longer expands when a date is tapped. Each mobile step is a full-width replacement view.
+6. Removed motion.div layout wrapper around panels. The FLIP animation (scaleY transform) it triggered when the calendar changed height was breaking GPU compositing. Replaced with a plain div; panels still fade/scale via PANEL_ANIM.
+7. visualViewport resize listener: on keyboard appearance, calculates exactly how much the focused input is hidden by the keyboard (getBoundingClientRect vs visualViewport.height) and scrolls the calendar wrapper by that amount without touching the document.
+
+### Input zoom fix
+iOS Safari auto-zooms inputs with font-size < 16px. inputCls used text-sm (14px). Changed to text-base (16px).
+
+### Button layout
+Removed the Projects button and its gallery panel (placeholder, no real content). Three buttons remain: Data, Book, Find Me.
+
+Layout changed from grid-cols-2 (2×2 on mobile) to flex on all breakpoints — all three buttons on one row at every screen size. gap-2 mobile, gap-8 desktop. Removed w-full from buttons and DockButton wrappers.
+
+Tightened wordmark-to-buttons gap: mt-10 → mt-4.
 
 ---
-
-## Second session (June 1 2026) — mobile + iOS 26 Liquid Glass
-
-Deployed the site (Step 8) then spent a long stretch fixing iOS Safari mobile.
-
-Mobile layout fixes (committed):
-- Safe-area handling, body/html to ink, fluid hero title (text-[1.75rem] →
-  sm:text-5xl → lg:text-7xl, whitespace-nowrap).
-- Buttons rounded-[9999px] not rounded-full (Safari mis-rendered the token); 2x2
-  grid on mobile, flex row on desktop.
-- GlassBookingCalendar responsive: flex-col on mobile, animates height instead of
-  width, slot grid capped max-h-48 on mobile.
-- OG image redesigned dark to match hero. Security headers + API validation added.
-- Standalone web-app: appleWebApp black-translucent + app/manifest.ts.
-
-iOS 26 Liquid Glass shader-behind-bars fix (the hard one). Source:
-https://1ar.io/updates/safari-26-liquid-glass-web. Full detail in
-SESSION-HANDOFF.md. Key points:
-- iOS 26 samples root CSS background-color at scrollY 0, ignores theme-color,
-  and does NOT composite fixed/absolute layers behind the chrome — only
-  normal-flow content, and only when scrollY > 0.
-- Fix: ink root bg in globals.css, scroll runway (body min-height 100dvh+62px,
-  html overflow-y scroll), in-flow bleeding MEDIA STAGE (100lvh + 62 + 136, neg
-  margin-top), content fixed+overflow-auto, ResizeObserver on the shader canvas,
-  scrollTo offset on load.
-- Scroll lock: touchmove preventDefault on the document unless the gesture is
-  inside a real scrollable element. Freezes the hero, keeps Liquid Glass, lets
-  panels scroll. (A snap-back attempt was tried first and removed for jank.)
-
-All verified working on the user's iPhone (iOS 26). Site live.
 
 ## Files in flight
 
-None. Session is complete and all files are committed and deployed.
+None. All changes are committed and deployed to production.
 
 ---
 
-## Failed attempts this session
+## Next steps
 
-PowerShell pipe BOM corruption. Piping a string to vercel env add in PowerShell adds a BOM character (0xFEFF) to the start of the value regardless of Console.OutputEncoding settings. This appeared as a Bytestring error in the Cal.com fetch (character at index 7 of the Authorization header value is > 255). Fixed by writing raw ASCII bytes to a temp file and using cmd stdin redirect. See Gotchas in SESSION-HANDOFF.md.
+Step 9. Replace placeholder gallery cards with real project photos and titles. Update galleryItems in app/(site)/page.tsx — each item needs title, subtitle, label, photo.url, and href. Currently the Data gallery is live; galleryItems for Projects was removed (no button). When Lou is ready to feature projects, add a Projects button back and wire galleryItems.
 
-vercel --prod output directory error. The pre-existing personal-site Vercel project had no framework configured. It was looking for a public/ directory. Fixed by adding vercel.json with framework: nextjs.
+Step 10. Build blog at /blog/[slug] and wire dataItems hrefs to post pages.
 
----
+Step 11. Restore /about and /work when content is ready. ESP case study requires written permission before publishing.
 
-## Next step
-
-Add real project content to gallery cards. Replace placeholder titles, subtitles, and Unsplash images in galleryItems inside app/(site)/page.tsx. Add href to each card pointing to the case study or external URL.
-
-After that: build blog at /blog/[slug] and wire dataItems hrefs. Then restore /about and /work when content is ready.
+Optional. Custom home-screen app icon (currently uses a page screenshot on iOS).
 
 ---
 
 ## Decisions locked
 
-- Domain. www.entityresoloution.com, Namecheap. DNS pointed at Vercel.
+- Domain. www.entityresoloution.com, Namecheap DNS → Vercel.
 - Stack. Next.js 16.2.6, React 19.2.4, Tailwind v4, motion, three.js, date-fns, lucide-react. Locked.
 - Booking. Cal.com entity-resoloution, 30min event type. On-page glass calendar. No embed or redirect.
 - Cal.com API version. v2. v1 is decommissioned.
 - LinkedIn. https://www.linkedin.com/in/entity-resoloution/ in lib/site.ts.
 - Hero visual. WebGL shader, three.js, ink base with signal and cyan-motion lines.
-- Panel system. Projects / Data / Book are mutually exclusive panels. Find Me is always an external link.
-- Gallery. CircularGallery with radius 360, autoRotateSpeed 0.04, drag and wheel interaction.
+- Panel system. Data and Book are mutually exclusive panels. Find Me is always an external link.
+- Gallery. CircularGallery with drag, wheel, and touch swipe. Responsive card/radius sizing.
 - Deployment. Vercel, truss-home-s-projects team, personal-site project.
 - GitHub. trusshome/personal-site, private, main branch, hello@trusshomeco.com author.
+- Buttons. Three buttons: Data, Book, Find Me. Single flex row on all screen sizes.
+- Button glow. box-shadow only (no filter:blur) for iOS Safari compatibility.
+- Mobile booking flow. Step-replacement pattern: each step (date picker → slots → form → success) hides the previous view on mobile. No stacking that would expand the calendar height.
 
 ## Decisions still open
 
-- Real project images and copy for gallery cards.
+- Real project images and copy (for a future Projects gallery or case study section).
 - Blog structure and slug conventions for Data card links.
 - ESP feature permission. Written yes required before the case study publishes.
 - About page copy and timeline for going live.
-- Apex domain (entityresoloution.com without www). DNS propagation in progress.
 - book_a_call analytics event. Needs Vercel Analytics dashboard verification once traffic arrives.

@@ -204,16 +204,15 @@ export default function HomePage() {
         <ShaderAnimation className="h-full w-full" />
       </div>
 
-      {/* CONTENT OVERLAY. Fixed to the viewport so the runway scroll only moves
-          the in-flow shader behind it, never the content. Carries no background
-          (so it does not tint the chrome). Scrolls internally if a panel grows
-          taller than the screen, leaving the document scroll locked to the runway. */}
+      {/* CONTENT OVERLAY. Fixed to the viewport. overflow:clip means this element
+          is NEVER a scroll container — iOS cannot scroll it even if content
+          overflows. All scrolling happens inside the calendar wrapper div below,
+          which is the sole scroll container on the page. */}
       <section
           className="fixed inset-0 flex flex-col items-center justify-center px-4 sm:px-6 text-center"
           style={{
             zIndex: 1,
-            overflowY: 'auto',
-            overscrollBehavior: 'contain',
+            overflowY: 'clip',
             paddingTop: 'calc(env(safe-area-inset-top) + 8px)',
             paddingBottom: 'calc(env(safe-area-inset-bottom) + 24px)',
           }}
@@ -251,7 +250,7 @@ export default function HomePage() {
                   <div
                     className="w-full overflow-y-auto"
                     style={{
-                      maxHeight: 'calc(100dvh - env(safe-area-inset-top) - env(safe-area-inset-bottom) - 160px)',
+                      maxHeight: 'calc(100dvh - env(safe-area-inset-top) - env(safe-area-inset-bottom) - 225px)',
                       overscrollBehavior: 'contain',
                     }}
                   >

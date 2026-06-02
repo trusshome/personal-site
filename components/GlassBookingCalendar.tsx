@@ -33,7 +33,7 @@ function fmtTime(iso: string, tz: string) {
 
 // ── Shared input style ────────────────────────────────────────────────────────
 const inputCls =
-  'w-full rounded-xl border border-white/10 bg-white/5 px-4 py-2.5 text-sm text-white placeholder:text-white/30 transition-colors focus:border-signal focus:outline-none focus:ring-1 focus:ring-signal/40';
+  'w-full rounded-xl border border-white/10 bg-white/5 px-4 py-2.5 text-base text-white placeholder:text-white/30 transition-colors focus:border-signal focus:outline-none focus:ring-1 focus:ring-signal/40';
 
 export default function GlassBookingCalendar() {
   const [isMobile, setIsMobile] = React.useState(false);

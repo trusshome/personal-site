@@ -15,6 +15,7 @@ import {
   startOfDay,
 } from 'date-fns';
 import { motion, AnimatePresence } from 'motion/react';
+import { cn } from '@/lib/utils';
 
 const WEEK_DAYS = ['Su', 'Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa'];
 const RIGHT_W = 400; // desktop only
@@ -151,8 +152,9 @@ export default function GlassBookingCalendar() {
       className="flex flex-col sm:flex-row overflow-hidden rounded-2xl sm:rounded-3xl border border-white/10 bg-ink/50 text-white shadow-2xl backdrop-blur-2xl w-full sm:w-auto"
       aria-label="Booking calendar"
     >
-      {/* ── LEFT: date grid, always visible ───────────────────────────────── */}
-      <div className="w-full sm:w-72 flex-shrink-0 p-4 sm:p-5">
+      {/* ── LEFT: date grid — hidden on mobile once the user is past slots so the
+           full wrapper height goes to the form / success content instead. ── */}
+      <div className={cn('w-full sm:w-72 flex-shrink-0 p-4 sm:p-5', isMobile && step !== 'slots' && 'hidden sm:block')}>
         {/* Month nav */}
         <div className="mb-4 flex items-center justify-between">
           <motion.p
@@ -242,9 +244,9 @@ export default function GlassBookingCalendar() {
         )}
       </div>
 
-      {/* ── Divider ────────────────────────────────────────────────────────── */}
+      {/* ── Divider — also hidden on mobile once past slots step ──────────── */}
       <AnimatePresence>
-        {selectedDate && (
+        {selectedDate && !(isMobile && step !== 'slots') && (
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
@@ -345,9 +347,14 @@ export default function GlassBookingCalendar() {
                     {selectedSlot && fmtTime(selectedSlot, timeZone)}
                   </button>
 
-                  <p className="mb-4 font-display text-sm font-semibold text-white/70">
+                  <p className="mb-1 font-display text-sm font-semibold text-white/70">
                     Confirm your booking
                   </p>
+                  {isMobile && selectedDate && selectedSlot && (
+                    <p className="mb-4 font-mono text-[10px] text-white/40">
+                      {format(selectedDate, 'EEE, MMM d')} · {fmtTime(selectedSlot, timeZone)}
+                    </p>
+                  )}
 
                   <form onSubmit={handleSubmit} className="flex flex-col gap-3">
                     <input

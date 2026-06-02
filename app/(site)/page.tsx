@@ -177,11 +177,11 @@ export default function HomePage() {
           overflows. All scrolling happens inside the calendar wrapper div below,
           which is the sole scroll container on the page. */}
       <section
-          className="fixed inset-0 flex flex-col items-center justify-start px-4 sm:px-6 text-center"
+          className="fixed inset-0 flex flex-col items-center justify-center px-4 sm:px-6 text-center"
           style={{
             zIndex: 1,
             overflowY: 'clip',
-            paddingTop: 'calc(env(safe-area-inset-top) + 25dvh)',
+            paddingTop: 'calc(env(safe-area-inset-top) + 8px)',
             paddingBottom: 'calc(env(safe-area-inset-bottom) + 24px)',
           }}
         >

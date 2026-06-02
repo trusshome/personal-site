@@ -444,8 +444,7 @@ export default function GlassBookingCalendar() {
                   initial={{ opacity: 0, scale: 0.96 }}
                   animate={{ opacity: 1, scale: 1 }}
                   transition={{ duration: 0.25 }}
-                  className="flex h-full flex-col items-center justify-center gap-4 p-8 text-center"
-                  style={{ width: RIGHT_W }}
+                  className="flex h-full flex-col items-center justify-center gap-4 p-8 text-center w-full sm:w-[400px]"
                 >
                   <motion.div
                     initial={{ scale: 0 }}

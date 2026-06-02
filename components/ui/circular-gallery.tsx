@@ -251,7 +251,12 @@ const CircularGallery = React.forwardRef<HTMLDivElement, CircularGalleryProps>(
                   href={item.href ?? '#'}
                   tabIndex={isFront ? 0 : -1}
                   draggable={false}
-                  className="block relative w-full h-full rounded-2xl shadow-2xl overflow-hidden border border-white/15 bg-ink/60 backdrop-blur-lg group focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-signal"
+                  className={cn(
+                    'block relative w-full h-full rounded-2xl overflow-hidden bg-ink/60 backdrop-blur-lg group focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-signal transition-[transform,border-color,box-shadow] duration-300',
+                    isFront
+                      ? 'border border-signal/50 scale-[1.04] shadow-[0_0_24px_rgba(47,107,255,0.45),0_0_48px_rgba(47,107,255,0.2)]'
+                      : 'border border-white/15 scale-100 shadow-2xl',
+                  )}
                   onClick={(e) => {
                     if (touchMoved.current || isDragging.current || !item.href) e.preventDefault();
                     touchMoved.current = false;

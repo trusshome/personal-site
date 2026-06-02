@@ -153,6 +153,20 @@ export default function HomePage() {
 
     window.scrollTo({ top: offset, left: 0, behavior: 'instant' as ScrollBehavior });
 
+    // Snap document scrollY back to the runway offset whenever anything moves it.
+    // Two things can displace scrollY even with the touchmove lock in place:
+    //   1. overscroll chaining when the user hits a scroll boundary inside an
+    //      overflow container (handled partially by overscroll-behavior:contain,
+    //      but iOS can still slip through on edge cases).
+    //   2. iOS scrolling the document to bring a focused input into view when the
+    //      virtual keyboard appears — this bypasses all touch event guards.
+    const onScroll = () => {
+      if (Math.abs(window.scrollY - offset) > 2) {
+        window.scrollTo({ top: offset, left: 0, behavior: 'instant' as ScrollBehavior });
+      }
+    };
+    window.addEventListener('scroll', onScroll, { passive: true });
+
     // Allow the gesture only when it lands inside an element that can actually
     // scroll; block it (and thus the document scroll) otherwise.
     const onTouchMove = (e: TouchEvent) => {
@@ -166,7 +180,10 @@ export default function HomePage() {
     };
 
     document.addEventListener('touchmove', onTouchMove, { passive: false });
-    return () => document.removeEventListener('touchmove', onTouchMove);
+    return () => {
+      document.removeEventListener('touchmove', onTouchMove);
+      window.removeEventListener('scroll', onScroll);
+    };
   }, []);
 
   return (
@@ -235,6 +252,7 @@ export default function HomePage() {
                     className="w-full overflow-y-auto"
                     style={{
                       maxHeight: 'calc(100dvh - env(safe-area-inset-top) - env(safe-area-inset-bottom) - 160px)',
+                      overscrollBehavior: 'contain',
                     }}
                   >
                     <GlassBookingCalendar />

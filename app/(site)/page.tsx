@@ -228,7 +228,7 @@ export default function HomePage() {
                       iOS Safari could let document scrollY escape the 62px
                       runway and break the Liquid Glass compositing. */}
                   <div
-                    className="w-full overflow-y-auto"
+                    className="w-full sm:w-fit overflow-y-auto"
                     style={{
                       maxHeight: 'calc(100dvh - env(safe-area-inset-top) - env(safe-area-inset-bottom) - 225px)',
                       overscrollBehavior: 'contain',

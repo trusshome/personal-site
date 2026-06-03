@@ -374,13 +374,12 @@ export default function GlassBookingCalendar() {
 
                   <form onSubmit={handleSubmit} className="flex flex-col gap-3"
                     onFocus={(e) => {
-                      // Make the scroll container in page.tsx scrollable so
-                      // onViewportResize can scroll the focused input above the keyboard.
+                      if (!isMobile) return;
                       const root = e.currentTarget.closest('[aria-label="Booking calendar"]') as HTMLElement | null;
                       if (root) root.style.paddingBottom = '320px';
                     }}
                     onBlur={(e) => {
-                      // Only remove padding when focus leaves the form entirely.
+                      if (!isMobile) return;
                       if (e.currentTarget.contains(e.relatedTarget as Node | null)) return;
                       const root = e.currentTarget.closest('[aria-label="Booking calendar"]') as HTMLElement | null;
                       if (root) root.style.paddingBottom = '';

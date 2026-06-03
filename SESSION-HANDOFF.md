@@ -1,7 +1,7 @@
 # Session Handoff. Entity resoLOUtion
 
 Owner. Luciano Tarabocchia II (Lou)
-Last updated. Monday, June 2 2026
+Last updated. Monday, June 2 2026 (evening)
 Read with. CLAUDE.md for brand and conventions, build-plan.md for the step sequence, prompts.md for the copy paste prompts, site-standup.md for the running log.
 
 This file lets a brand new session resume the build cold, with no chat history, and go straight to the next step. It matches what is on disk, not memory.
@@ -154,7 +154,26 @@ Hero. Full-bleed dark, WebGL shader background. No top nav on any page currently
 
 ---
 
-## What shipped in this session (June 1–2 2026)
+## What shipped in this session (June 2 2026, evening)
+
+### Git sync
+17 local commits that had never been pushed were force-pushed to GitHub. Four remote-only commits (mobile fixes done outside this session) were pulled in. GitHub and local are now in sync.
+
+Remote commits pulled (done outside this session):
+- `ed6512a` fix(mobile): make calendar wrapper scrollable when keyboard opens
+- `c425ebe` fix: center success card on mobile by using w-full instead of fixed 400px width
+- `f90da13` fix: match GlowLink height to button height on mobile
+- `8c67779` feat: highlight front card in circular gallery with scale, border, and glow
+
+### Desktop calendar width fix (page.tsx)
+The booking calendar card was stretching full viewport width on desktop because the scroll container had `w-full` at all breakpoints. Added `sm:w-fit` so the scroll container collapses to the calendar's content width on desktop. The outer `flex justify-center` wrapper already centers it. Mobile is `w-full` unchanged.
+
+### Desktop form focus fix (GlassBookingCalendar.tsx)
+The `onFocus`/`onBlur` handlers on the booking form add `paddingBottom: '320px'` to the calendar root to push inputs above the iOS virtual keyboard. On desktop this fired too, making the calendar 320px taller and forcing the scroll container to show a scrollbar. Added `if (!isMobile) return;` at the top of both handlers so the padding is never applied on desktop.
+
+---
+
+## What shipped in the previous session (June 1–2 2026)
 
 Desktop scrollbar hidden. scrollbar-width:none + ::-webkit-scrollbar{display:none} on html. Keeps overflow-y:scroll for Liquid Glass runway without showing the track.
 
@@ -243,7 +262,11 @@ Do NOT:
 
 ## Current state
 
-www.entityresoloution.com is live. The hero page shows the full-bleed WebGL shader bleeding behind iOS 26 Safari bars, entity resoLOUtion wordmark, three glow-pill dock buttons (Data, Book, Find Me) on one row. Data panel opens a circular gallery with 6 PDL use case cards. Book panel opens the glass booking calendar — full mobile booking flow verified working. All steps (date picker, slots, form, success) maintain Liquid Glass compositing throughout. Find Me links to LinkedIn. All other pages return 404. GitHub repo is clean.
+www.entityresoloution.com is live. GitHub repo is fully in sync with origin/main (no local-only commits). The hero page shows the full-bleed WebGL shader bleeding behind iOS 26 Safari bars, entity resoLOUtion wordmark, three glow-pill dock buttons (Data, Book, Find Me) on one row.
+
+Data panel opens a 3D CircularGallery with 6 PDL use case cards. The front card has a scale + border + glow highlight. No hrefs yet.
+
+Book panel opens the glass booking calendar. Full mobile booking flow verified working. Desktop booking flow verified working — calendar is content-width, form fields focus without layout shift. All steps (date picker, slots, form, success) correct on both desktop and mobile. Find Me links to LinkedIn. All other pages return 404.
 
 ---
 

@@ -4,7 +4,7 @@ Owner. Luciano Tarabocchia II (Lou)
 Project. Entity resoLOUtion personal showcase site
 Domain. www.entityresoloution.com (live)
 Folder. 007 - TrussHomeCo / 002 - ClaudeCode / personal-site
-Last updated. Monday, June 2 2026
+Last updated. Monday, June 2 2026 (evening)
 
 This is the running standup for the personal site. Read it before each new session so you know the goal, where the work stands, what is in flight, what changed, what failed, and the one next step. Keep it current.
 
@@ -18,17 +18,30 @@ A personal showcase site that positions Lou as a builder who ships real solution
 
 ## Current state
 
-Site is deployed and live at www.entityresoloution.com. Only the hero page is public. All other routes return 404.
+Site is deployed and live at www.entityresoloution.com. GitHub is fully synced. Only the hero page is public. All other routes return 404.
 
-The hero shows the WebGL shader, entity resoLOUtion wordmark, and three dock buttons (Data, Book, Find Me) on one row. Clicking Data opens a 3D rotating circular gallery. Clicking Book opens the glass booking calendar. Find Me links to LinkedIn.
+The hero shows the WebGL shader, entity resoLOUtion wordmark, and three dock buttons (Data, Book, Find Me) on one row. Clicking Data opens a 3D rotating circular gallery (front card highlighted with scale, border, glow). Clicking Book opens the glass booking calendar. Find Me links to LinkedIn.
 
-Cal.com booking is fully functional on production (v2 API). The full mobile booking flow works without breaking iOS 26 Liquid Glass at any step.
+Cal.com booking is fully functional on production (v2 API). The full mobile booking flow works without breaking iOS 26 Liquid Glass at any step. The desktop booking flow is also verified: calendar is content-width, inputs focus without layout shift or scrollbar.
 
 Gallery cards are placeholder content. No hrefs set yet. Real content to be added when Lou is ready.
 
 ---
 
-## What changed this session (June 1–2 2026)
+## What changed this session (June 2 2026, evening)
+
+### Git sync
+17 local commits that had never been pushed were force-pushed to GitHub. Four remote commits done in a separate session were pulled in. Repo is fully synced.
+
+### Desktop calendar width (page.tsx)
+Added `sm:w-fit` to the scroll container wrapping GlassBookingCalendar. Previously `w-full` at all breakpoints caused the glass card to stretch the full viewport width with the calendar content in the left corner. Mobile `w-full` unchanged.
+
+### Desktop form focus (GlassBookingCalendar.tsx)
+The `onFocus`/`onBlur` handlers add `paddingBottom: '320px'` to push inputs above the iOS keyboard. On desktop this was firing too, making the calendar 320px taller and triggering a scrollbar. Added `if (!isMobile) return;` to both handlers. Mobile keyboard-avoidance behavior unchanged.
+
+---
+
+## What changed last session (June 1–2 2026)
 
 ### Desktop scrollbar
 Hide the scrollbar visually via scrollbar-width:none and ::-webkit-scrollbar{display:none} on html. Keeps overflow-y:scroll (needed for Liquid Glass runway) without showing a scrollbar track.

@@ -34,6 +34,16 @@ One public page and one conversion. The hero page is the only live route. The bo
 
 Site is live at www.entityresoloution.com. GitHub repo at trusshome/personal-site. Vercel project personal-site under truss-home-s-projects.
 
+### Step 8.6. Desktop polish (done — June 2 2026)
+
+Four mobile fixes pulled from a parallel session (keyboard scroll, success card width, GlowLink height, CircularGallery front-card highlight).
+
+Two desktop-only fixes applied:
+- Calendar card was full viewport width — added `sm:w-fit` to the scroll container in page.tsx so the card collapses to content width and is centered.
+- Focusing a form input added `paddingBottom: 320px` (a mobile keyboard-avoidance hack) on desktop too, triggering a scrollbar — guarded both `onFocus`/`onBlur` handlers with `if (!isMobile) return;`.
+
+Booking flow is now verified working correctly on both desktop and mobile.
+
 ### Step 8.5. Mobile polish (done — June 1–2 2026)
 
 Substantial mobile and iOS 26 work:
@@ -99,8 +109,9 @@ When Lou is ready to publish more content, restore the full page implementations
 - GitHub repo at trusshome/personal-site, all commits authored as hello@trusshomeco.com. Done.
 - Cal.com API fully functional on production (v2, BOM fixed). Done.
 - iOS 26 Safari Liquid Glass preserved throughout the full booking flow. Done.
-- Mobile gallery: responsive card sizing, touch swipe, momentum deceleration. Done.
+- Mobile gallery: responsive card sizing, touch swipe, momentum deceleration, front-card highlight. Done.
 - Mobile buttons: three on one row, correct pill shape, no zoom on inputs. Done.
+- Desktop booking calendar: content-width card, no layout shift on input focus, no spurious scrollbar. Done.
 
 ## Definition of done (future)
 
